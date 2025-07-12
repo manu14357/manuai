@@ -1,0 +1,28 @@
+{
+  "selections": [
+    {
+      "timestamp": "2025-07-12T14:08:57.320194",
+      "query": "hi",
+      "complexity": 0.008,
+      "selected_model": "standard"
+    },
+    {
+      "timestamp": "2025-07-12T14:09:54.076246",
+      "query": "Give me customer names from 100 to 110",
+      "complexity": 0.064,
+      "selected_model": "standard"
+    },
+    {
+      "timestamp": "2025-07-12T14:10:58.983499",
+      "query": "Do you know about manohar?",
+      "complexity": 0.0275,
+      "selected_model": "standard"
+    },
+    {
+      "timestamp": "2025-07-12T14:12:01.519295",
+      "query": "Do you know about Akhila?",
+      "complexity": 0.0275,
+      "selected_model": "standard"
+    }
+  ]
+}

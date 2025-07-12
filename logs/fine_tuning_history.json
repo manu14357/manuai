@@ -1,0 +1,275 @@
+[
+  {
+    "table_name": "products",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:39:25"
+  },
+  {
+    "table_name": "customers",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:39:25"
+  },
+  {
+    "table_name": "orders",
+    "column_count": 6,
+    "row_count": 500,
+    "improvements": [
+      "Added index on foreign key column 'customer_id'",
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:39:25"
+  },
+  {
+    "table_name": "order_items",
+    "column_count": 5,
+    "row_count": 1556,
+    "improvements": [
+      "Added index on foreign key column 'product_id'",
+      "Added index on foreign key column 'order_id'",
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:39:25"
+  },
+  {
+    "table_name": "products",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:40:24"
+  },
+  {
+    "table_name": "customers",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:40:24"
+  },
+  {
+    "table_name": "products",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:40:58"
+  },
+  {
+    "table_name": "customers",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:40:58"
+  },
+  {
+    "table_name": "orders",
+    "column_count": 6,
+    "row_count": 500,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:40:58"
+  },
+  {
+    "table_name": "order_items",
+    "column_count": 5,
+    "row_count": 1556,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:40:58"
+  },
+  {
+    "table_name": "products",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:41:16"
+  },
+  {
+    "table_name": "products",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:41:22"
+  },
+  {
+    "table_name": "customers",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:41:22"
+  },
+  {
+    "table_name": "orders",
+    "column_count": 6,
+    "row_count": 500,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:41:22"
+  },
+  {
+    "table_name": "order_items",
+    "column_count": 5,
+    "row_count": 1556,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T15:41:22"
+  },
+  {
+    "table_name": "products",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T16:00:13"
+  },
+  {
+    "table_name": "customers",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T16:00:13"
+  },
+  {
+    "table_name": "orders",
+    "column_count": 6,
+    "row_count": 500,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T16:00:13"
+  },
+  {
+    "table_name": "order_items",
+    "column_count": 5,
+    "row_count": 1556,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T16:00:13"
+  },
+  {
+    "table_name": "products",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T16:57:35"
+  },
+  {
+    "table_name": "customers",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T16:57:35"
+  },
+  {
+    "table_name": "orders",
+    "column_count": 6,
+    "row_count": 500,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T16:57:35"
+  },
+  {
+    "table_name": "order_items",
+    "column_count": 5,
+    "row_count": 1556,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T16:57:35"
+  },
+  {
+    "table_name": "products",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T17:37:13"
+  },
+  {
+    "table_name": "customers",
+    "column_count": 7,
+    "row_count": 100,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T17:37:13"
+  },
+  {
+    "table_name": "orders",
+    "column_count": 6,
+    "row_count": 500,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T17:37:13"
+  },
+  {
+    "table_name": "order_items",
+    "column_count": 5,
+    "row_count": 1556,
+    "improvements": [
+      "Analyzed table for improved query planning"
+    ],
+    "execution_time": 0.1,
+    "timestamp": "2025-07-12T17:37:13"
+  }
+]

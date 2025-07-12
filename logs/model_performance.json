@@ -1,0 +1,600 @@
+{
+  "selections": [
+    {
+      "timestamp": "2025-03-26T22:41:44.772727",
+      "query": "What is the capital of France?",
+      "complexity": 0.033,
+      "selected_model": "groq"
+    },
+    {
+      "timestamp": "2025-03-26T22:42:15.123456",
+      "query": "Can you explain how quantum computing works?",
+      "complexity": 0.215,
+      "selected_model": "groq"
+    },
+    {
+      "timestamp": "2025-03-26T22:43:30.654321",
+      "query": "Write a complex SQL query to analyze customer purchase patterns across multiple tables with joins and window functions to identify the top spending customers by category over the last quarter.",
+      "complexity": 0.782,
+      "selected_model": "sambanova"
+    },
+    {
+      "timestamp": "2025-03-26T22:45:12.987654",
+      "query": "What's the weather like today?",
+      "complexity": 0.028,
+      "selected_model": "groq"
+    },
+    {
+      "timestamp": "2025-03-26T22:47:45.246810",
+      "query": "Create a data analysis pipeline in Python to process time series data, handle missing values, and generate forecasts using ARIMA models with proper validation techniques.",
+      "complexity": 0.653,
+      "selected_model": "sambanova"
+    },
+    {
+      "timestamp": "2025-03-26T22:49:20.135792",
+      "query": "Who won the last World Cup?",
+      "complexity": 0.047,
+      "selected_model": "groq"
+    },
+    {
+      "timestamp": "2025-03-26T22:50:05.975310",
+      "query": "Develop a comprehensive machine learning model to predict customer churn based on historical transaction data, demographic information, and behavioral patterns.",
+      "complexity": 0.587,
+      "selected_model": "sambanova"
+    },
+    {
+      "timestamp": "2025-07-12T12:51:58.672289",
+      "query": "hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:00:03.856103",
+      "query": "which products are available in the database",
+      "complexity": 0.055999999999999994,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:01:31.156692",
+      "query": "I want products details?",
+      "complexity": 0.022000000000000002,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:08:20.738228",
+      "query": "give me products details?",
+      "complexity": 0.022000000000000002,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:09:19.533799",
+      "query": "Give me details of Apple Iphone 13?",
+      "complexity": 0.0385,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:09:57.734945",
+      "query": "Which Custome is spend more money?",
+      "complexity": 0.033,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:11:23.530090",
+      "query": "Do you have David Lee details?",
+      "complexity": 0.033,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:12:03.202104",
+      "query": "Do you know about Akhila",
+      "complexity": 0.04,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:13:13.049289",
+      "query": "Give me 100 to 110 customer names",
+      "complexity": 0.055999999999999994,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:13:43.199159",
+      "query": "Do you know about manohar?",
+      "complexity": 0.0275,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:21:56.781262",
+      "query": "Show me the first 3 customers",
+      "complexity": 0.048,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:22:25.766399",
+      "query": "tell me about Bob Brown?",
+      "complexity": 0.0275,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:23:39.992001",
+      "query": "Which Product buy Bod Brown?",
+      "complexity": 0.0275,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:26:24.037547",
+      "query": "Do you know about manohar?",
+      "complexity": 0.0275,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:26:47.472852",
+      "query": "Do you know about Akhila?",
+      "complexity": 0.0275,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:30:29.833304",
+      "query": "Show me the first 5 customers with their \u2502 \u2502 names and emails",
+      "complexity": 0.10400000000000001,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:30:56.171834",
+      "query": "Show me the first 5 customers with their \u2502 \u2502 names and emails",
+      "complexity": 0.10400000000000001,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:32:04.169303",
+      "query": "Show me the first 5 customers with their \u2502 \u2502 names and emails",
+      "complexity": 0.10400000000000001,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:32:54.155679",
+      "query": "tell me about the first 5 customers",
+      "complexity": 0.055999999999999994,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:43:22.972959",
+      "query": "tell me about the first 5 customers",
+      "complexity": 0.055999999999999994,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T13:58:26.492224",
+      "query": "Show me first 3 customers",
+      "complexity": 0.04,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:08:57.292725",
+      "query": "hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:21:26.950071",
+      "query": "hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:22:36.623186",
+      "query": "Show me the first 3 customers",
+      "complexity": 0.048,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:24:19.008069",
+      "query": "Show me the first 5 customers details",
+      "complexity": 0.055999999999999994,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:25:27.847373",
+      "query": "Show me the first 3 customers full details",
+      "complexity": 0.064,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:27:09.939835",
+      "query": "which Customers spend more money?",
+      "complexity": 0.0275,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:29:24.525589",
+      "query": "which Customers spend more?",
+      "complexity": 0.022000000000000002,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:30:22.853282",
+      "query": "tell me about the database?",
+      "complexity": 0.0275,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:31:15.492964",
+      "query": "which product is more cost?",
+      "complexity": 0.0275,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:32:27.751984",
+      "query": "which products buy the Mary Rich?",
+      "complexity": 0.033,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:33:02.441344",
+      "query": "Mary Rich. tell me about this customer",
+      "complexity": 0.0385,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:41:50.641830",
+      "query": "Mary Rich. tell me about this customer",
+      "complexity": 0.0385,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:43:09.587286",
+      "query": "Why Mary Rich is in Data base is there any info?",
+      "complexity": 0.060500000000000005,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:44:10.864412",
+      "query": "based on the info is she but or any other into in the database",
+      "complexity": 0.11199999999999999,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:47:34.179159",
+      "query": "give me orders data",
+      "complexity": 0.032,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:52:50.194400",
+      "query": "Which products did Mary Rich buy?",
+      "complexity": 0.033,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:53:58.567061",
+      "query": "tell me about the mary rich?",
+      "complexity": 0.033,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T14:54:59.593475",
+      "query": "give me those detains",
+      "complexity": 0.032,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:04:15.355651",
+      "query": "which customer is buy more products or spend more?",
+      "complexity": 0.0495,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:05:34.826160",
+      "query": "customer_segment\" set to \"top_spenders\", and then filter the results based on the total amount spent by each customer.",
+      "complexity": 0.199,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:06:51.441167",
+      "query": "tell me about Bob Johnson?",
+      "complexity": 0.0275,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:07:58.231835",
+      "query": "tell me about Bob Johnson?",
+      "complexity": 0.0275,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:11:08.241559",
+      "query": "tell me about Bob Johnson?",
+      "complexity": 0.0275,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:19:57.447712",
+      "query": "What can i do to increase my growth",
+      "complexity": 0.064,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:21:13.050248",
+      "query": "What are current total orders?",
+      "complexity": 0.0275,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:22:00.189019",
+      "query": "What are top 5 orders",
+      "complexity": 0.09,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:23:22.108075",
+      "query": "give me ino about fist 5 orders?",
+      "complexity": 0.0385,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:25:00.373229",
+      "query": "in first 5 orders tell pending order count?",
+      "complexity": 0.044000000000000004,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:26:06.745242",
+      "query": "highest value of the order or product",
+      "complexity": 0.055999999999999994,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:52:35.256735",
+      "query": "hey hi",
+      "complexity": 0.016,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:53:05.919459",
+      "query": "hii",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:55:00.304164",
+      "query": "hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T15:59:35.762377",
+      "query": "hello",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T16:19:27.924818",
+      "query": "Hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T16:25:52.309219",
+      "query": "hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T16:30:15.720537",
+      "query": "give me details of first 5 customers",
+      "complexity": 0.055999999999999994,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T16:40:19.511020",
+      "query": "Hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T16:43:10.381940",
+      "query": "Hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T16:44:27.520743",
+      "query": "Hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T16:44:42.099565",
+      "query": "What are you doing right now?",
+      "complexity": 0.033,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T16:45:12.620316",
+      "query": "tell me about the database",
+      "complexity": 0.04,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T16:46:09.623474",
+      "query": "tell me about the database data like what type of data is having in data",
+      "complexity": 0.12000000000000001,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T16:55:35.048463",
+      "query": "Hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T16:59:30.891814",
+      "query": "hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:00:22.778065",
+      "query": "Tell me about the data in the database?",
+      "complexity": 0.044000000000000004,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:02:32.906104",
+      "query": "Tell me about the Product table?",
+      "complexity": 0.033,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:05:49.852260",
+      "query": "hai",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:34:31.484119",
+      "query": "Hey hi",
+      "complexity": 0.016,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:36:17.620241",
+      "query": "Hey Hi",
+      "complexity": 0.016,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:37:58.963776",
+      "query": "tell me about the data like what data is present and what use?",
+      "complexity": 0.07150000000000001,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:38:49.133954",
+      "query": "Give me sample data in the database",
+      "complexity": 0.055999999999999994,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:39:30.864638",
+      "query": "yes",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:40:07.179337",
+      "query": "give me sample data about orders",
+      "complexity": 0.048,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:40:53.761508",
+      "query": "give me 5 random data",
+      "complexity": 0.04,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:41:46.212655",
+      "query": "5 random orders in the table",
+      "complexity": 0.048,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:42:34.811538",
+      "query": "show me the first 5 order details",
+      "complexity": 0.055999999999999994,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:44:05.681245",
+      "query": "show me the first 5 order details in the database",
+      "complexity": 0.08,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:47:34.651113",
+      "query": "hey hi",
+      "complexity": 0.016,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:48:17.130293",
+      "query": "tell me about the data in the database",
+      "complexity": 0.064,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:49:02.429069",
+      "query": "show me the data in the orders table",
+      "complexity": 0.064,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:49:50.250320",
+      "query": "show me the first 5 rows in orders",
+      "complexity": 0.064,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:52:09.247233",
+      "query": "i want first 5 orders details",
+      "complexity": 0.048,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:53:55.075568",
+      "query": "hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:54:24.582080",
+      "query": "i want first 5 orders details",
+      "complexity": 0.048,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:56:25.458055",
+      "query": "i want first 5 products details",
+      "complexity": 0.048,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T17:57:42.647822",
+      "query": "i want first 5 orders details",
+      "complexity": 0.048,
+      "selected_model": "llama3.1:8b"
+    }
+  ],
+  "feedback": [
+    {
+      "timestamp": "2025-03-26T22:42:10.123456",
+      "query": "What is the capital of France?",
+      "rating": 5,
+      "comments": "Perfect answer, very quick response"
+    },
+    {
+      "timestamp": "2025-03-26T22:43:20.654321",
+      "query": "Can you explain how quantum computing works?",
+      "rating": 4,
+      "comments": "Good explanation but could use more examples"
+    },
+    {
+      "timestamp": "2025-03-26T22:45:00.987654",
+      "query": "Write a complex SQL query to analyze customer purchase patterns across multiple tables with joins and window functions to identify the top spending customers by category over the last quarter.",
+      "rating": 5,
+      "comments": "Excellent detailed SQL query with clear explanations"
+    },
+    {
+      "timestamp": "2025-03-26T22:46:30.246810",
+      "query": "What's the weather like today?",
+      "rating": 3,
+      "comments": "Answer was too generic, didn't ask for my location"
+    },
+    {
+      "timestamp": "2025-03-26T22:49:15.135792",
+      "query": "Create a data analysis pipeline in Python to process time series data, handle missing values, and generate forecasts using ARIMA models with proper validation techniques.",
+      "rating": 4,
+      "comments": "Very comprehensive solution but slightly complex implementation"
+    }
+  ]
+}

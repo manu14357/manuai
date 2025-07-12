@@ -1,0 +1,22 @@
+{
+  "generated_at": "2025-07-12T11:41:55.663299",
+  "total_tables": 15,
+  "tables": [
+    "product_categories",
+    "products",
+    "customers",
+    "customer_addresses",
+    "orders",
+    "order_items",
+    "payments",
+    "product_reviews",
+    "marketing_campaigns",
+    "campaign_metrics",
+    "employees",
+    "suppliers",
+    "purchase_orders",
+    "support_tickets",
+    "daily_analytics"
+  ],
+  "description": "Optimized business database with realistic relationships and data"
+}

@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"python.autoComplete.extraPaths": [
+			".venv/lib/python3.10/site-packages",
+			"venv/lib/python3.10/site-packages",
+			".venv/lib/python3.12/site-packages",
+			"venv/lib/python3.12/site-packages",
+			"/home/amchen/.local/lib/python3.10/site-packages",
+		],
+		"python.analysis.extraPaths": [
+			".venv/lib/python3.10/site-packages",
+			"venv/lib/python3.10/site-packages",
+			".venv/lib/python3.12/site-packages",
+			"venv/lib/python3.12/site-packages",
+			"/home/amchen/.local/lib/python3.10/site-packages",
+		]
+	}
+}

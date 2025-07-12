@@ -1,0 +1,447 @@
+"""
+Database Fine-Tuning Module for Querymancer.
+
+This module provides functionality to fine-tune database schema and data
+for optimal LLM interactions and query performance.
+"""
+
+import json
+import os
+import sqlite3
+import time
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+from langchain_core.language_models import BaseChatModel
+
+from querymancer.config import Config
+from querymancer.database_optimizer import get_optimizer
+from querymancer.logging import console, log, log_panel
+from querymancer.models import create_llm
+from querymancer.optimizations import TokenOptimizationPipeline
+from querymancer.performance_config import get_performance_config
+from querymancer.tools import with_sql_cursor
+
+
+@dataclass
+class FineTuningResult:
+    """Result of a fine-tuning operation."""
+    
+    table_name: str
+    column_count: int
+    row_count: int
+    improvements: List[str]
+    execution_time: float
+    timestamp: datetime = datetime.now()
+
+
+class DatabaseFineTuner:
+    """Fine-tunes database schema and data for optimal LLM interactions."""
+    
+    def __init__(self, model: Optional[BaseChatModel] = None):
+        """Initialize the database fine-tuner.
+        
+        Args:
+            model: Optional LLM model to use for fine-tuning
+        """
+        self.model = model or create_llm(Config.MODEL)
+        self.optimizer = get_optimizer()
+        self.token_optimizer = TokenOptimizationPipeline()
+        self.config = get_performance_config()
+        self.logs_path = Path(Config.Path.APP_HOME) / "logs"
+        self.logs_path.mkdir(exist_ok=True)
+        self.fine_tuning_history_path = self.logs_path / "fine_tuning_history.json"
+    
+    def fine_tune_all_tables(self) -> List[FineTuningResult]:
+        """Fine-tune all tables in the database.
+        
+        Returns:
+            List[FineTuningResult]: Results of fine-tuning operations
+        """
+        results = []
+        
+        # Get all tables
+        with with_sql_cursor() as cursor:
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+            )
+            tables = [row[0] for row in cursor.fetchall()]
+        
+        total_tables = len(tables)
+        log_panel(
+            "Database Fine-Tuning",
+            f"Starting fine-tuning process for {total_tables} tables"
+        )
+        
+        # Fine-tune each table
+        for i, table in enumerate(tables, 1):
+            log(f"Fine-tuning table {i}/{total_tables}: {table}")
+            try:
+                result = self.fine_tune_table(table)
+                results.append(result)
+                log(f"✅ Fine-tuned {table}: {len(result.improvements)} improvements")
+            except Exception as e:
+                log(f"❌ Error fine-tuning {table}: {str(e)}")
+        
+        # Save history
+        self._save_fine_tuning_history(results)
+        
+        log_panel(
+            "Fine-Tuning Complete",
+            f"Successfully fine-tuned {len(results)}/{total_tables} tables"
+        )
+        
+        return results
+    
+    def fine_tune_table(self, table_name: str) -> FineTuningResult:
+        """Fine-tune a specific table in the database.
+        
+        Args:
+            table_name: Name of the table to fine-tune
+            
+        Returns:
+            FineTuningResult: Result of fine-tuning operation
+        """
+        start_time = time.time()
+        improvements = []
+        
+        # Get table schema
+        schema = self.optimizer.get_table_schema_cached(table_name)
+        if not schema:
+            raise ValueError(f"Table {table_name} not found")
+        
+        # Get table statistics
+        row_count = self._get_row_count(table_name)
+        column_count = len(schema)
+        
+        # 1. Analyze and optimize column data types
+        type_improvements = self._optimize_column_types(table_name, schema)
+        improvements.extend(type_improvements)
+        
+        # 2. Create missing indexes
+        index_improvements = self._create_missing_indexes(table_name, schema)
+        improvements.extend(index_improvements)
+        
+        # 3. Optimize text columns for LLM interaction
+        text_improvements = self._optimize_text_columns(table_name, schema)
+        improvements.extend(text_improvements)
+        
+        # 4. Apply any denormalization if needed
+        denorm_improvements = self._apply_denormalization(table_name)
+        improvements.extend(denorm_improvements)
+        
+        # 5. Apply database-specific optimizations
+        db_improvements = self._apply_database_optimizations(table_name)
+        improvements.extend(db_improvements)
+        
+        execution_time = time.time() - start_time
+        
+        return FineTuningResult(
+            table_name=table_name,
+            column_count=column_count,
+            row_count=row_count,
+            improvements=improvements,
+            execution_time=execution_time
+        )
+    
+    def _get_row_count(self, table_name: str) -> int:
+        """Get the number of rows in a table.
+        
+        Args:
+            table_name: Name of the table
+            
+        Returns:
+            int: Number of rows
+        """
+        with with_sql_cursor() as cursor:
+            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+            return cursor.fetchone()[0]
+    
+    def _optimize_column_types(
+        self, table_name: str, schema: List[Tuple]
+    ) -> List[str]:
+        """Optimize column data types for better performance.
+        
+        Args:
+            table_name: Name of the table
+            schema: Table schema as a list of tuples (from PRAGMA table_info)
+            
+        Returns:
+            List[str]: Improvement descriptions
+        """
+        improvements = []
+        
+        with with_sql_cursor() as cursor:
+            # Convert schema to dict for easier access
+            # PRAGMA table_info returns: (cid, name, type, notnull, dflt_value, pk)
+            column_dict = {col[1]: {"type": col[2], "is_primary_key": bool(col[5])} for col in schema}
+            
+            for column_name, column_info in column_dict.items():
+                current_type = column_info.get("type", "").upper()
+                
+                # Skip primary key columns
+                if column_info.get("is_primary_key"):
+                    continue
+                
+                # Check if it's a foreign key (we'll skip these too)
+                cursor.execute(f"PRAGMA foreign_key_list('{table_name}')")
+                foreign_keys = cursor.fetchall()
+                is_foreign_key = any(fk[3] == column_name for fk in foreign_keys)
+                
+                if is_foreign_key:
+                    continue
+                
+                # Analyze column values
+                cursor.execute(
+                    f"SELECT MIN({column_name}), MAX({column_name}), "
+                    f"AVG({column_name}), COUNT(DISTINCT {column_name}) "
+                    f"FROM {table_name} WHERE {column_name} IS NOT NULL"
+                )
+                min_val, max_val, avg_val, unique_count = cursor.fetchone()
+                
+                # Optimize integer columns
+                if current_type == "INTEGER":
+                    if min_val is not None and max_val is not None:
+                        if min_val >= 0 and max_val < 256:
+                            improvements.append(
+                                f"Column '{column_name}' could be stored as TINYINT (0-255)"
+                            )
+                        elif min_val >= -128 and max_val < 128:
+                            improvements.append(
+                                f"Column '{column_name}' could be stored as TINYINT (-128 to 127)"
+                            )
+                
+                # Optimize text columns
+                if current_type in ("TEXT", "VARCHAR"):
+                    # Sample some values
+                    cursor.execute(
+                        f"SELECT {column_name}, LENGTH({column_name}) as len "
+                        f"FROM {table_name} "
+                        f"WHERE {column_name} IS NOT NULL "
+                        f"ORDER BY RANDOM() LIMIT 50"
+                    )
+                    samples = cursor.fetchall()
+                    if samples:
+                        max_length = max(sample[1] for sample in samples)
+                        if max_length < 50:
+                            improvements.append(
+                                f"Column '{column_name}' could use VARCHAR({max_length * 2}) "
+                                f"instead of {current_type}"
+                            )
+        
+        return improvements
+    
+    def _create_missing_indexes(
+        self, table_name: str, schema: List[Tuple]
+    ) -> List[str]:
+        """Create missing indexes for better query performance.
+        
+        Args:
+            table_name: Name of the table
+            schema: Table schema as a list of tuples (from PRAGMA table_info)
+            
+        Returns:
+            List[str]: Improvement descriptions
+        """
+        improvements = []
+        
+        # Get existing indexes
+        with with_sql_cursor() as cursor:
+            cursor.execute(f"PRAGMA index_list({table_name})")
+            existing_indexes = {row[1]: row[2] for row in cursor.fetchall()}
+            
+            # Check frequently queried columns that should be indexed
+            high_cardinality_columns = []
+            for column_name, column_info in schema.items():
+                # Skip if already indexed
+                if any(idx.startswith(f"{table_name}_{column_name}") for idx in existing_indexes):
+                    continue
+                
+                # Skip primary key columns (already indexed)
+                if column_info.get("is_primary_key"):
+                    continue
+                
+                # Check cardinality
+                cursor.execute(
+                    f"SELECT COUNT(DISTINCT {column_name}) * 1.0 / COUNT(*) "
+                    f"FROM {table_name}"
+                )
+                cardinality = cursor.fetchone()[0] or 0
+                
+                # Check if foreign key (good candidate for index)
+                is_foreign_key = column_info.get("is_foreign_key", False)
+                
+                # High cardinality columns or foreign keys are good candidates for indexes
+                if cardinality > 0.7 or is_foreign_key:
+                    high_cardinality_columns.append(column_name)
+                    
+                    # Create index if it's a good candidate
+                    index_name = f"idx_{table_name}_{column_name}"
+                    try:
+                        cursor.execute(
+                            f"CREATE INDEX IF NOT EXISTS {index_name} ON {table_name}({column_name})"
+                        )
+                        improvements.append(f"Created index on '{column_name}' (high cardinality)")
+                    except sqlite3.Error as e:
+                        log(f"Error creating index on {column_name}: {str(e)}")
+        
+        return improvements
+    
+    def _optimize_text_columns(
+        self, table_name: str, schema: Dict[str, Dict[str, Any]]
+    ) -> List[str]:
+        """Optimize text columns for better LLM interaction.
+        
+        Args:
+            table_name: Name of the table
+            schema: Table schema
+            
+        Returns:
+            List[str]: Improvement descriptions
+        """
+        improvements = []
+        
+        # Identify text columns
+        text_columns = [
+            col_name for col_name, col_info in schema.items()
+            if col_info.get("type", "").upper() in ("TEXT", "VARCHAR")
+        ]
+        
+        if not text_columns:
+            return improvements
+        
+        # Sample data from text columns
+        with with_sql_cursor() as cursor:
+            for column_name in text_columns:
+                cursor.execute(
+                    f"SELECT {column_name} FROM {table_name} "
+                    f"WHERE {column_name} IS NOT NULL "
+                    f"ORDER BY RANDOM() LIMIT 10"
+                )
+                samples = [row[0] for row in cursor.fetchall() if row[0]]
+                
+                if not samples:
+                    continue
+                
+                # Analyze text characteristics
+                avg_length = sum(len(str(s)) for s in samples) / len(samples)
+                
+                # Check if column might contain redundant or verbose text
+                if avg_length > 100:
+                    # Use token optimizer to check if content can be optimized
+                    original_tokens = sum(len(str(s).split()) for s in samples)
+                    optimized_samples = [self.token_optimizer.refine_query(str(s)) for s in samples]
+                    optimized_tokens = sum(len(s.split()) for s in optimized_samples)
+                    
+                    if optimized_tokens < original_tokens * 0.8:  # 20% reduction
+                        improvements.append(
+                            f"Text column '{column_name}' could be optimized for token efficiency "
+                            f"(potential {100 - int(optimized_tokens / original_tokens * 100)}% reduction)"
+                        )
+        
+        return improvements
+    
+    def _apply_denormalization(self, table_name: str) -> List[str]:
+        """Apply denormalization for better query performance if needed.
+        
+        Args:
+            table_name: Name of the table
+            
+        Returns:
+            List[str]: Improvement descriptions
+        """
+        # This is a placeholder for denormalization logic
+        # In a real implementation, this would analyze join patterns and suggest/implement
+        # denormalization strategies for frequently joined tables
+        
+        return []
+    
+    def _apply_database_optimizations(self, table_name: str) -> List[str]:
+        """Apply database-specific optimizations.
+        
+        Args:
+            table_name: Name of the table
+            
+        Returns:
+            List[str]: Improvement descriptions
+        """
+        improvements = []
+        
+        with with_sql_cursor() as cursor:
+            # Rebuild the table to reclaim space and optimize storage
+            try:
+                cursor.execute(f"VACUUM {table_name}")
+                improvements.append(f"Vacuumed table to optimize storage")
+            except sqlite3.OperationalError:
+                # VACUUM on individual tables might not be supported
+                pass
+            
+            # Analyze table for query planning
+            cursor.execute(f"ANALYZE {table_name}")
+            improvements.append(f"Analyzed table for improved query planning")
+        
+        return improvements
+    
+    def _save_fine_tuning_history(self, results: List[FineTuningResult]) -> None:
+        """Save fine-tuning history to a JSON file.
+        
+        Args:
+            results: Results of fine-tuning operations
+        """
+        # Load existing history if available
+        history = []
+        if self.fine_tuning_history_path.exists():
+            try:
+                with open(self.fine_tuning_history_path, "r") as f:
+                    history = json.load(f)
+            except (json.JSONDecodeError, FileNotFoundError):
+                history = []
+        
+        # Add new results
+        for result in results:
+            history.append({
+                "table_name": result.table_name,
+                "column_count": result.column_count,
+                "row_count": result.row_count,
+                "improvements": result.improvements,
+                "execution_time": result.execution_time,
+                "timestamp": result.timestamp.isoformat()
+            })
+        
+        # Write updated history
+        with open(self.fine_tuning_history_path, "w") as f:
+            json.dump(history, f, indent=2)
+
+
+def fine_tune_database(tables: Optional[List[str]] = None) -> None:
+    """Fine-tune the database for optimal LLM interaction.
+    
+    Args:
+        tables: Optional list of specific tables to fine-tune. If None, all tables are fine-tuned.
+    """
+    fine_tuner = DatabaseFineTuner()
+    
+    if tables:
+        log_panel(
+            "Database Fine-Tuning",
+            f"Starting fine-tuning process for {len(tables)} specified tables"
+        )
+        results = []
+        for table in tables:
+            try:
+                result = fine_tuner.fine_tune_table(table)
+                results.append(result)
+                log(f"✅ Fine-tuned {table}: {len(result.improvements)} improvements")
+            except Exception as e:
+                log(f"❌ Error fine-tuning {table}: {str(e)}")
+        
+        # Save history
+        fine_tuner._save_fine_tuning_history(results)
+    else:
+        fine_tuner.fine_tune_all_tables()
+
+
+if __name__ == "__main__":
+    fine_tune_database()
