@@ -1,0 +1,574 @@
+# ArcOps Manufacturing Execution System
+
+## System Overview
+ArcOps is a Manufacturing Execution System that optimizes factory operations by:
+- Providing detailed, real-time guidance to shop floor operators
+- Scheduling production based on priority and resource availability
+- Tracking work order progress and identifying bottlenecks
+- Ensuring quality control through automated checks and documentation
+- Enabling comprehensive inventory traceability
+- Integrating with machines to capture performance metrics
+
+The system connects ERP platforms with shop floor operations to improve manufacturing efficiency and visibility.
+
+## Data Flow
+Note: 
+1) Work Orders and Sales orders and Projects can be considered the same thing in ArcOps ecosystem
+2) If someone mentions sales order or projects it just means work order
+3) Work flows are reusable recipes containing a list of job steps. It is attached to every job. steps can be completed in parallel or sequentially
+4) Each Job step also referred as workflow step defines a set of work to be carried out. Often each step corresponds to a station on the production floor and has a target runtime or cycle time associated with it.
+5) A job step can contain information related to a) Instructions to show the operator, b) Checklists to be filled out by the operator, c) Inventory to be consumed or produced, d) assets or machines to be used, e) which operator are allowed to access
+6) supporting modules for job step: Content Manager (Instruction files for operator), Checklist Manager, Inventory Manager, Personnel & Asset Manager
+
+**Work Orders -> Jobs -> Job Steps**
+
+## Database Structures
+
+### UEIOS_V3 Database
+#### Primary Tables
+1. **Sales_Scheduling**
+   - Work Order details
+
+2. **Batch_Run**
+   - Work Order related Job's details
+
+3. **Batch_Run_Step**
+   - Job's related Step's details
+
+4. **BATCH_RUN_STEP_TRANSACTION**
+   - Job step wise individual logs
+
+4. **Batch_Run_Step_Equipment**
+   - Step's related Machine log
+
+5. **Batch_Run_Step_Equipment_Transaction**
+   - Machine-wise individual logs
+
+6. **Batch_Run_Step_Labor**
+   - Step's related Personnel log
+
+7. **Batch_Run_Step_Labor_Transaction**
+   - Personnel-wise individual logs, detailed audit trail of operator activities on the shop floor
+
+8. **Batch_Template**
+   - Master Workflow Details
+
+9. **Batch_Template_Step**
+   - Workflow Sub Details
+
+10. **Personnel**
+    - Master User Details
+
+11. **Facility_Asset**
+    - Master Machines Details
+
+12. **Customer**
+    - Master Customer Details
+
+### UEIOS_INTERNAL_V3 Database
+#### Primary Tables
+1. **INTERNAL_BATCH_RUN**
+   - Customer Fields for Batch_Run Table (Reject and Rework cost)
+
+2. **INTERNAL_FACILITY_ASSET**
+   - Customer Fields for Facility_Asset (Machine cost/hrs)
+
+3. **INTERNAL_PERSONNEL**
+   - Customer Fields for Personnel (Labor cost/hrs)
+
+4. **INTERNAL_SALES_SCHEDULING**
+   - Customer Fields for Sales Scheduling (Raw Material cost, HT cost, coating cost, Sheet metal cost, po number, project id etc)
+
+### UEIOS_V4 Database
+#### Primary Tables
+1. **DOC_DOCUMENT_CONTENT**
+   - DOCUMENT_LINK_ID from UEIOS_V3.BATCH_RUN Table
+
+2. **CNT_CONTENT**
+   - NAME (File/Image)
+   - CONTENT_LINK_ID from DOC_DOCUMENT_CONTENT
+
+3. **CNT_CONTENT_REVISION**
+   - CONTENT_LINK_ID from CNT_CONTENT
+   - CR.STATUS = 'active'
+
+4. **CNT_CONTENT_FILE**
+   - CONTENT_REVISION_LINK_ID from CNT_CONTENT_REVISION
+
+##Status Mapped to corresponding integer in database
+### Detailed Status Breakdown by Table
+
+**SALES_SCHEDULING**
+In Progress -> 9 or 2 or 5 | DO NOT DEPEND ON IT
+Is completed ->6 | DO NOT DEPEND ON IT
+Not Scheduled -> 12 or 7
+
+**BATCH_RUN**
+In Progress -> 3 or 6
+Scheduled (not started) -> 1
+Completed -> 5
+Not scheduled -> 0
+Unassigned (No workflow attached) -> 8
+
+**BATCH_RUN_STEP**
+Queued -> 1
+Ready -> 2
+Running -> 3
+Completed -> 5
+Paused -> 6
+
+**BATCH_RUN_STEP_TRANSACTION**
+Start_Time -> 3
+Stop_Time -> 6
+Completed -> 5
+
+**BATCH_RUN_STEP_LABOR_TRANSACTION** and **BATCH_RUN_STEP_EQUIPMENT_TRANSACTION** and **BATCH_RUN_STEP_LABOR** and **BATCH_RUN_STEP_EQUIPMENT**
+Running -> 4
+Stop -> 7
+
+**FACILITY_ASSET_TYPE**
+Production Machine -> 3
+Out/Source -> 5
+
+
+# Key ArcOps MES Tables - Compact Schema
+
+## SALES_SCHEDULING
+- ID (int), NAME (varchar), REQUESTED_START_DATE_TIME (datetime), REQUESTED_END_DATE_TIME (datetime), NOTES (nvarchar), CREATED_BY (int), ASSIGNED_TO (int), CREATED_DATE_TIME (datetime), BATCH_TEMPLATE_ID (int), PURCHASE_ORDER_ID (int), SALES_ORDER_STATUS (int), GENERIC_COLUMN (varchar), EXTRA_INFO_DATABASE_ID (int), CUSTOMER_ID (int), USE_DEFAULT_CUSTOMER_DETAILS (bit), CUSTOM_CUSTOMER_CONTACT_NAME (varchar), CUSTOM_CUSTOMER_CONTACT_NUMBER_PRIMARY (varchar), CUSTOM_CUSTOMER_CONTACT_NUMBER_SECONDARY (varchar), CUSTOM_CUSTOMER_CONTACT_EMAIL (varchar), CUSTOM_CUSTOMER_DELIVERY_ADDRESS (varchar), USE_DEFAULT_RUNTIME (bit), CUSTOM_BATCH_RUN_RUNTIME_XML (nvarchar), HEARTBEAT_TIME (datetime), HEARTBEAT_USER (int), IS_DELETED (bit), SALES_TYPE (int), PARENT_ID (int), PREVIOUS_STATUS (int), DOCUMENT_LINK_ID (int)
+
+## BATCH_RUN
+- ID (int), NAME (varchar), NOTES (nvarchar), SCHEDULED_START_DATE_TIME (datetime), START_DATE_TIME (datetime), END_DATE_TIME (datetime), INVOICE_NUMBER (varchar), PURCHASE_ORDER_ID (int), SALES_SCHEDULING_ID (int), BATCH_TEMPLATE_ID (int), PERSONNEL_ID (int), PARENT_RUN_ID (int), STATUS (int), GANTT_COLOR (varchar), LAST_UPDATE (datetime), CREATED_DATE_TIME (datetime), USE_DEFAULT_RUNTIME (bit), CUSTOM_BATCH_RUN_STEP_RUNTIME_XML (nvarchar), CUSTOM_RUNTIME (float), HEARTBEAT_TIME (datetime), HEARTBEAT_USER (int), IS_DELETED (bit), IMAGE_STRING_ID (varchar), INSTRUCTIONS (nvarchar), BATCH_RUN_TYPE (int), EXTRA_INFO_DATABASE_ID (int), QUANTITY (float), REWORK_QUANTITY (float), SCRAP_QUANTITY (float), DEFECT_QUANTITY (float), COST (float), CUSTOM_FINISHED_GOOD_INV_ITEM_LINK_ID (int), CUSTOM_INV_BOM_LINK_ID (int), CUSTOM_FINISHED_GOOD_INV_ITEM_TYPE_LINK_ID (int), PRIORITY (int), CREATED_BY (int), SCHEDULED_DATE_TIME (datetime), MODEL_ID (int), DELIVER_DATE_TIME (datetime), IS_LOCK (bit), LOCATION_LINK_ID (int), DOCUMENT_LINK_ID (int), IS_MODIFIED (bit), ALLOW_ADD_STEP (bit), ALLOW_EDIT_STEP (bit), MASTER_BATCH_TEMPLATE (int)
+
+## BATCH_RUN_STEP
+- ID (int), EXPECTED_START_DATE_TIME (datetime), SPLIT_STEP_EXPECTED_END_DATE_TIME (datetime), START_DATE_TIME (datetime), END_DATE_TIME (datetime), NOTES (nvarchar), BATCH_RUN_ID (int), PERSONNEL_ID (int), BATCH_TEMPLATE_STEP_ID (int), INDEX (smallint), STATUS (tinyint), GANTT_COLOR (nvarchar), USE_DEFAULT_RUNTIME (bit), CUSTOM_RUNTIME (decimal), IS_DELETED (bit), INSTRUCTIONS (nvarchar), IMAGE_STRING (int), IN_USE (bit), TIMESHEET_PROFILE_ID (int), CUSTOM_CURRENT_VALUES_DATA_TIMING_LINK_ID (int), CUSTOM_EXPECTED_MIN_TIME (decimal), CUSTOM_EXPECTED_MAX_TIME (decimal), STEP_TYPE (int), FULL_NOTES (nvarchar), BATCH_RUN_STEP_SPLIT_LINK_ID (int), CYCLE_TIME_SECONDS (decimal), ACTUAL_RUN_TIME_MINUTES (decimal), LAST_TRANSACTION_DATE_TIME (datetime), IS_LOCK (bit), NAME (nvarchar), AREA_LINK_ID (int), DOCUMENT_LINK_ID (int), IS_DISABLED (bit), DISABLE_OVERRIDE_ALLOWED (bit), ALLOCATE_ASSET (bit), ALLOCATE_PERSONNEL (bit), ALLOW_SPLIT (bit), CATEGORY (int), MIN_GAP_PREV_STEP (decimal), PARTIAL_COMPLETE_AFTER (decimal)
+
+## BATCH_RUN_STEP_LABOR
+- ID (int), START_DATE_TIME (datetime), END_DATE_TIME (datetime), NOTES (nvarchar), RUN_BY (int), BATCH_RUN_STEP_ID (int), BATCH_TEMPLATE_STEP_LABOR_ID (int), PERSONNEL_ID (int), IS_SPECIFIC (bit), IS_DELETED (bit), STATUS (tinyint), PLANNED_TYPE (int), QUALIFICATION_LINK_ID (int), IS_USED (bit), SCHEDULED_START_DATE_TIME (datetime), SCHEDULED_END_DATE_TIME (datetime), ACTUAL_RUNTIME_MINUTES (decimal), LAST_TRANSACTION_DATE_TIME (datetime), REQUIRED_QUANTITY (decimal), CREATED_BY (int), CREATED_DATE_TIME (datetime)
+
+## BATCH_RUN_STEP_LABOR_TRANSACTION
+- ID (int), TRANSACATION_DATE_TIME (datetime), TRANSACTION_STATUS (int), PERSONNEL_ID (int), BATCH_RUN_STEP_LABOR_ID (int), TRANSACTION_AMOUNT (float), BATCH_RUN_STEP_PARAMETER_TRANSACTION_ID (int), BATCH_RUN_STEP_TRANSACTION_ID (int), TRANSACTION_NOTES (varchar), TRANSACTION_OWNER_PERSONNEL_ID (int), OTHER_OWNER_TYPE_ENUM (int), OTHER_OWNER_TYPE_ID (int), IS_DELETED (bit), IS_OVERRIDE (bit), OVERRIDE_PARENT_TRANSACTION_LINK_ID (int), OVERRIDE_DATE_TIME (datetime), OVERRIDE_AMOUNT (float), OVERRIDE_START_DATE_TIME (datetime), OVERRIDE_END_DATE_TIME (datetime), TRANSACTION_OVERRIDE_USER_ID (int)
+
+## BATCH_RUN_STEP_EQUIPMENT
+- ID (int), START_DATE_TIME (datetime), END_DATE_TIME (datetime), NOTES (nvarchar), RUN_BY (int), BATCH_RUN_STEP_ID (int), BATCH_TEMPLATE_STEP_EQUIPMENT_ID (int), FACILITY_ASSET_ID (int), FACILITY_ASSET_TYPE_ID (int), IS_USED (bit), IS_SPECIFIC (bit), IS_DELETED (bit), STATUS (tinyint), PLANNED_TYPE (int), SCHEDULED_START_DATE_TIME (datetime), SCHEDULED_END_DATE_TIME (datetime), ACTUAL_RUNTIME_MINUTES (decimal), LAST_TRANSACTION_DATE_TIME (datetime), REQUIRED_QUANTITY (decimal), QUALIFICATION_LINK_ID (int)
+
+## BATCH_RUN_STEP_EQUIPMENT_TRANSACTIONS
+- ID (int), TRANSACTION_DATE_TIME (datetime), TRANSACTION_STATUS (int), FACILITY_ASSET_ID (int), BATCH_RUN_STEP_TRANSACTION_ID (int), BATCH_RUN_STEP_PARAMENTER_TRANSACTION_ID (int), TRANSACTION_NOTES (varchar), TRANSACTION_OWNER_PERSONNEL_ID (int), OTHER_OWNER_TYPE_TABLE_ENUM (int), OTHER_OWNER_TYPE_ID (int), TRANSACTION_AMOUNT (float), BATCH_RUN_STEP_EQUIPMENT_ID (int), IS_DELETED (bit), IS_OVERRIDE (bit), OVERRIDE_PARENT_TRANSACTION_LINK_ID (int), OVERRIDE_DATE_TIME (datetime), OVERRIDE_AMOUNT (float), OVERRIDE_START_DATE_TIME (datetime), OVERRIDE_END_DATE_TIME (datetime), TRANSACTION_OVERRIDE_USER_ID (int)
+
+## BATCH_RUN_STEP_RESOURCE
+- ID (int), AMOUNT_USED (decimal), AMOUNT_GENERATED (decimal), DATE_TIME_USED (datetime), USED_BY (int), NOTES (nvarchar), BATCH_RUN_STEP_ID (int), BATCH_TEMPLATE_STEP_RESOURCE_ID (int), INV_ITEM_LINK_ID (int), IS_DELETED (bit), RESOURCE_LINK_ID (int), INV_ITEM_TYPE_LINK_ID (int), PLANNED_AMOUNT (decimal), IN_OUT (int), CATEGORY (int), TYPE (int), USE_BOM (bit)
+
+## BATCH_RUN_STEP_RESOURCE_TRANSACTION
+- ID (int), BATCH_RUN_STEP_RESOURCE_LINK_ID (int), QUANTITY (decimal), BARCODE (nvarchar), INVENTORY_ITEM_LINK_ID (int), FROM_AREA_LINK_ID (int), TO_AREA_LINK_ID (int), DESTINATION_INVENTORY_ITEM_LINK_ID (int), TYPE (nvarchar), REASON (nvarchar), IS_DELETED (bit), CREATED_DATE_TIME (datetime2), CREATED_BY (int), CREATED_BY_USERNAME (nvarchar), MODIFIED_DATE_TIME (datetime2), MODIFIED_BY (int), MODIFIED_BY_USERNAME (nvarchar), COMMENT (nvarchar), INVENTORY_ITEM_TYPE_LINK_ID (int), FULLY_MOVE (bit), TRANSFER_ORDER_ITEM_LINK_ID (int), TRACED_QUANTITY (decimal)
+
+## CUSTOMER
+- ID (int), NAME (nvarchar), CONTACT_NAME (nvarchar), CONTACT_NUMBER_PRIMARY (varchar), CONTACT_NUMBER_SECONDARY (varchar), CONTACT_EMAIL (varchar), DELIVERY_ADDRESS (nvarchar), IS_DELETED (bit), CUSTOMER_CODE (nvarchar), NOTES (nvarchar), EXTRA_INFO_DATABASE_ID (int), TYPE (int), PERSON_IN_CHARGE (int)
+
+## PERSONNEL
+- ID (int), USER_NAME (nvarchar), FIRST_NAME (nvarchar), LAST_NAME (nvarchar), POSITION (nvarchar), DEPARTMENT (nvarchar), GROUP (nvarchar), MOBILE_PERSONAL (nvarchar), MOBILE_OFFICE (nvarchar), LAND_LINE_OFFICE (nvarchar), LAND_LINE_HOME (nvarchar), EMAIL_PRIMARY (nvarchar), EMAIL_SECONDARY (nvarchar), USER_PICTURE (nvarchar), SECURITY_LEVEL (smallint), LOGIN_ALLOWED (bit), PASSWORD_HASH (nvarchar), PASSWORD_SALT (nvarchar), IS_AVAILABLE (bit), IS_DELETED (bit), TIMESHEET_PROFILE_ID (int), IMAGE_STRING_ID (int), PIN_NUMBER_HASH (nvarchar), PIN_NUMBER_SALT (nvarchar), RECENTLY_OPENED_XML (nvarchar), STATUS (smallint), TYPE (int), TARGET_ID (int), NORMALIZED_USER_NAME (nvarchar), NORMALIZED_EMAIL (nvarchar), EMAIL_CONFIRMED (bit), SECURITY_STAMP (nvarchar), CONCURRENCY_STAMP (nvarchar), MOBILE_OFFICE_CONFIRMED (bit), TWO_FACTOR_ENABLED (bit), LOCKOUT_END (datetimeoffset), LOCKOUT_ENABLED (bit), ACCESS_FAILED_COUNT (int), BARCODE (nvarchar), CONTENT_ID (int), ENABLE_AUTO_LOGIN (bit)
+
+## INTERNAL_SALES_SCHEDULING
+- ID (int), NAME (varchar), SALES_SCHEDULING_ID (int), BATCH_RUN_ID (int), INVENTORY_ITEM_BARCODE (varchar), JOB_NUMBER (varchar), PO_NUMBER (varchar), QUOTATION_NUMBER (varchar), VESSEL_NAME (varchar), WORK_DESCRIPTION (varchar), NUMBER_OF_UNITS (float), TYPE (int), DRILL_XML_DATA (nvarchar), NOTES (nvarchar), REMARKS (nvarchar), JOB_VALUE (float), CURRENCY (varchar), CUSTOMER_PO_NUMBER (varchar), REQUESTED_REPORT_DATE_TIME (datetime), START_DATE_TIME_EXACT_DATE (bit), END_DATE_TIME_EXACT_DATE (bit), REPORT_DATE_TIME_EXACT_DATE (bit), IS_DELETED (bit), PRODUCT_CODE (varchar), GLOBE_3_RAW_MATERIAL (varchar), GLOBE_3_PACKAGING (varchar), PRODUCT_DESCRIPTION (varchar), CUSTOMER_NAME (varchar), JOB_STATUS (int), ESTIMATED_TOTAL_TIME (float), TOTAL_QUANTITY_PRODUCED (float), TOTAL_REJECTED_QUANTITY (float), TOTAL_NO_GOOD_QUANTITY (float), TOTAL_PENDING_QUANTITY (float), TOTAL_REWORK_QUANTITY (float), GLOBE_3_MATERIAL_ID (int), WORK_INSTRUCTIONS (nvarchar), WORK_ILLUSTRATION_IMAGE_STRING (int), IS_OLD_DATA (bit), CUSTOMER_DELIVERY_DATE_TIME (datetime), CUSTOMER_DELIVERY_EXACT_DATE (bit), GLOBE_3_RAW_MATERIAL_AMOUNT (float), GLOBE_3_PACKAGING_AMOUNT (float), IMAGE_STRING_LINK_ID (int), PAYMENT_TERM (varchar), FREIGHT_FORWARDER (varchar), ACCOUNT_NUMEBR (varchar), SHIPPING_ADDRESS (varchar), REVISION_NO (varchar), SHIPMENT_TERM (varchar), FACILITY_ASSET_LINK_ID (int), QUANTITY (float), INVENTORY_ITEM_TYPE_LINK_ID (int), CTBASIC (float), MANPOWER (float), PREVIOUS_MODEL (varchar), NEXT_MODEL (varchar), IS_LOT_FINISHED (bit), PLAN_QUANTITY (float), COLOR (varchar), PART_WIDTH (float), PART_HEIGHT (float), PRIORITY (int), ARCNET_NAME (varchar), ARCNET_PO_NUMBER (varchar), ARCNET_SUPPLIER_ID (int), IS_TEMPLATE (bit), Sale_Order_Value (float), Customer_PO (varchar), Project_ID (varchar), Work_Order (varchar), Quote (varchar), Surface_Finish (varchar), Actual_Completion_Date (datetime), WO_Remarks (varchar), QTY (float), Work_order_Release_date (datetime), Work_Order_due_date (datetime)
+
+## INTERNAL_BATCH_RUN
+- ID (int), BATCH_RUN_LINK_ID (int), IS_DELETED (bit), QUANTITY_PRODUCED (float), QUANTITY_SCRAPPED (float), QUANTITY_REWORKED (float), QUANTITY_CONFIRMED_BY_OPERATOR (float), SHIFT_NOTES (varchar), VENDOR (varchar), VENDOR_DESCRIPTION (varchar), DESCRIPTION (varchar), DOCUMENT_NUMBER (varchar), BATCH_RUN_TYPE (int), CONTACT_NAME (varchar), CONTACT_DETAIL (varchar), SUPPLIER_LINK_ID (int), SCHEDULED_DELIVERY_DATE (datetime), CUSTOMER_LINK_ID (int), RAW_DATA_JSON (varchar), ETA (datetime), ETA_PLACE_CODE (varchar), ETA_PLACE_NAME (varchar), ETA_VNS (varchar), ETD (datetime), ETD_PLACE_CODE (varchar), ETD_PLACE_NAME (varchar), INCORTERMS_NAME (varchar), PARTIAL_SHIPMENT (varchar), SUPPLIER_CODE (varchar), SUPPLIER_NAME (varchar), INCOTERMS_PLACE_CODE (varchar), INTERNAL_LOCATION_LINK_ID (int), BASIC_FINISHED_DATE (datetime), PICKLIST_DETAIL_NO (varchar), PICKLIST_FORMULA_TOTAL (float), PICKLIST_GROUP_CODE (varchar), PICKLIST_GROUP_NAME (varchar), HANDOVER_DEPARTMENT (varchar), RECEIVED_DEPARTMENT (varchar), HANDLING_METHOD (varchar), HANDOVER_DEPARTMENT_ID (int), RECEIVED_DEPARTMENT_ID (int), HANDOVER_SUBDEPARTMENT_ID (int), RECEIVED_SUBDEPARTMENT_ID (int), IS_MISSING_COMPONENT (bit), LAST_FAIL_REASON (varchar), LAST_FAIL_DETAIL (varchar), LAST_FAIL_DATE_TIME (datetime), IS_URGENT (bit), PRIORITY (int), Dashboard_Remarks (varchar), Material (varchar), Surface_Finish (varchar), Quote_Number (varchar), Requested_End_Date (datetime), Quantity (float), Surface_Finish_Step (varchar), Qty (float), Quote_subline_number (varchar)
+
+
+## Example Queries
+
+### Employee Punch-Out Times
+```sql
+SELECT DISTINCT 
+    CONCAT(P.FIRST_NAME, ' ', P.LAST_NAME) AS Operator, 
+    MAX(BRSL.END_DATE_TIME) AS Last_Punch
+FROM UEIOS_V3.dbo.BATCH_RUN BR
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP BRS ON BR.ID = BRS.BATCH_RUN_ID 
+INNER JOIN BATCH_RUN_STEP_LABOR BRSL ON BRS.ID = BRSL.BATCH_RUN_STEP_ID
+INNER JOIN PERSONNEL P ON P.ID = BRSL.PERSONNEL_ID
+WHERE ISNULL(BR.IS_DELETED, 0) = 0 
+    AND ISNULL(BRS.IS_DELETED, 0) = 0 
+    AND ISNULL(BRSL.IS_DELETED, 0) = 0 
+    AND ISNULL(P.IS_DELETED, 0) = 0
+    AND BRSL.END_DATE_TIME >= DATEADD(day, DATEDIFF(day, 0, GETDATE()) - 1, 0) 
+    AND BRSL.END_DATE_TIME < DATEADD(day, DATEDIFF(day, 0, GETDATE()), 0)
+GROUP BY CONCAT(P.FIRST_NAME, ' ', P.LAST_NAME);
+```
+
+### Employees' Job Steps Today
+```sql
+SELECT DISTINCT 
+    BR.NAME AS Job,
+    BRS.NAME AS Step,
+    CONCAT(P.FIRST_NAME, ' ', P.LAST_NAME) AS Operator, 
+    BRSL.START_DATE_TIME,
+    BRSL.END_DATE_TIME
+FROM UEIOS_V3.dbo.BATCH_RUN BR
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP BRS ON BR.ID = BRS.BATCH_RUN_ID 
+INNER JOIN BATCH_RUN_STEP_LABOR BRSL ON BRS.ID = BRSL.BATCH_RUN_STEP_ID
+INNER JOIN PERSONNEL P ON P.ID = BRSL.PERSONNEL_ID
+WHERE ISNULL(BR.IS_DELETED, 0) = 0 
+    AND ISNULL(BRS.IS_DELETED, 0) = 0 
+    AND ISNULL(BRSL.IS_DELETED, 0) = 0 
+    AND ISNULL(P.IS_DELETED, 0) = 0
+    AND BRSL.START_DATE_TIME >= CAST(GETDATE() AS DATE);
+```
+
+### Find Pending work orders
+<assumption>Since there is a bug in SALES_ORDER_STATUS column, we cannot use it to find pending work orders. Instead need to depend on BATCH_RUN status</assumption>
+
+```sql
+SELECT 
+    SS.NAME AS WorkOrder,C.NAME AS Customer,SS.REQUESTED_END_DATE_TIME AS DeliveryDate,SS.SALES_ORDER_STATUS
+FROM UEIOS_V3.dbo.SALES_SCHEDULING SS
+LEFT JOIN UEIOS_V3.dbo.CUSTOMER C ON SS.CUSTOMER_ID = C.ID
+WHERE 
+    SS.ID IN (select SALES_SCHEDULING_ID from BATCH_RUN where STATUS not in (5,0) AND ISNULL(IS_DELETED,0) = 0) -- In Progress statuses
+    AND ISNULL(SS.IS_DELETED, 0) = 0
+ORDER BY SS.REQUESTED_END_DATE_TIME ASC
+```
+
+### Find Work orders that are not scheduled yet
+```sql
+SELECT 
+    SS.NAME AS WorkOrder, 
+    C.NAME AS Customer,
+    SS.REQUESTED_END_DATE_TIME AS DeliveryDate,
+    SS.SALES_ORDER_STATUS AS Status
+FROM UEIOS_V3.dbo.SALES_SCHEDULING SS
+LEFT JOIN UEIOS_V3.dbo.CUSTOMER C ON SS.CUSTOMER_ID = C.ID
+WHERE 
+    SS.SALES_ORDER_STATUS IN (12,7) -- Not scheduled statuses
+    AND ISNULL(SS.IS_DELETED, 0) = 0
+ORDER BY SS.REQUESTED_END_DATE_TIME ASC
+```
+
+### Work Orders due this month
+```sql
+SELECT 
+    SS.NAME AS WorkOrder, 
+    SS.REQUESTED_END_DATE_TIME AS DeliveryDate,
+    SS.REQUESTED_START_DATE_TIME AS StartDate,
+    SS.SALES_ORDER_STATUS AS Status
+FROM UEIOS_V3.dbo.SALES_SCHEDULING SS
+WHERE 
+    MONTH(SS.REQUESTED_END_DATE_TIME) = MONTH(GETDATE()) 
+    AND YEAR(SS.REQUESTED_END_DATE_TIME) = YEAR(GETDATE())
+    AND ISNULL(SS.IS_DELETED, 0) = 0
+ORDER BY SS.REQUESTED_END_DATE_TIME ASC
+```
+
+### Top 5 active jobs with operator and machine details
+```sql
+SELECT TOP 5
+    BR.NAME AS Job_Name,
+    BRS.NAME AS Step_Name,
+    BRSL.START_DATE_TIME AS Most_Recent_Activity,
+    SS.NAME AS Work_Order_Name,
+    FA.NAME AS Machine_Name,
+    CONCAT(P.FIRST_NAME, ' ', P.LAST_NAME) AS Operator_Name,
+    DATEDIFF(MINUTE, BRSL.START_DATE_TIME, ISNULL(BRSL.END_DATE_TIME, GETDATE())) AS Labor_Runtime_Minutes
+FROM UEIOS_V3.dbo.BATCH_RUN BR
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP BRS ON BR.ID = BRS.BATCH_RUN_ID
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP_LABOR BRSL ON BRS.ID = BRSL.BATCH_RUN_STEP_ID
+INNER JOIN UEIOS_V3.dbo.PERSONNEL P ON BRSL.PERSONNEL_ID = P.ID
+LEFT JOIN UEIOS_V3.dbo.SALES_SCHEDULING SS ON BR.SALES_SCHEDULING_ID = SS.ID
+LEFT JOIN UEIOS_V3.dbo.BATCH_RUN_STEP_EQUIPMENT BRSE ON BRS.ID = BRSE.BATCH_RUN_STEP_ID
+LEFT JOIN UEIOS_V3.dbo.FACILITY_ASSET FA ON BRSE.FACILITY_ASSET_ID = FA.ID
+WHERE ISNULL(BR.IS_DELETED, 0) = 0
+    AND ISNULL(BRS.IS_DELETED, 0) = 0
+    AND ISNULL(BRSL.IS_DELETED, 0) = 0
+    AND BRSL.START_DATE_TIME IS NOT NULL
+ORDER BY BRSL.START_DATE_TIME DESC
+```
+
+### find work orders that are delayed
+<assumption>Delayed means that a particular work order or job has not started as per the schedule.</assumption>
+```sql
+SELECT 
+    SS.NAME AS WorkOrder, 
+    C.NAME AS Customer,
+    SS.REQUESTED_END_DATE_TIME AS DeliveryDate,
+    SS.SALES_ORDER_STATUS AS Status
+FROM UEIOS_V3.dbo.SALES_SCHEDULING SS
+LEFT JOIN UEIOS_V3.dbo.CUSTOMER C ON SS.CUSTOMER_ID = C.ID
+WHERE (
+    SS.ID IN (select SALES_SCHEDULING_ID from UEIOS_V3.dbo.BATCH_RUN where SCHEDULED_START_DATE_TIME <= GETDATE() AND STATUS in (1) AND ISNULL(IS_DELETED,0) = 0) -- Scheduled but not started
+    AND ISNULL(SS.IS_DELETED, 0) = 0) 
+ORDER BY SS.REQUESTED_END_DATE_TIME ASC
+```
+
+### find work orders that are overdue
+```sql
+SELECT 
+    SS.NAME AS WorkOrder, 
+    C.NAME AS Customer,
+    SS.REQUESTED_END_DATE_TIME AS DeliveryDate,
+    SS.SALES_ORDER_STATUS AS Status
+FROM UEIOS_V3.dbo.SALES_SCHEDULING SS
+LEFT JOIN UEIOS_V3.dbo.CUSTOMER C ON SS.CUSTOMER_ID = C.ID
+WHERE (
+    SS.ID IN (select SALES_SCHEDULING_ID from BATCH_RUN where STATUS in (3, 6) AND ISNULL(IS_DELETED,0) = 0) -- In Progress statuses
+    AND ISNULL(SS.IS_DELETED, 0) = 0) AND SS.REQUESTED_END_DATE_TIME <= GETDATE()
+ORDER BY SS.REQUESTED_END_DATE_TIME ASC
+```
+
+### find job steps that are active now
+<assumption>active job steps means that the job step is in progress and since question mentions 'now', make sure there is an operator working on it right now</assumption>
+
+```sql
+SELECT 
+    BR.NAME AS Job_Name,
+    BRS.NAME AS Step_Name,
+    CONCAT(P.FIRST_NAME, ' ', P.LAST_NAME) AS Operator_Name,
+    BRSLT.TRANSACATION_DATE_TIME AS Activity_Start_Time,
+    DATEDIFF(MINUTE, BRSLT.TRANSACATION_DATE_TIME, GETDATE()) AS Minutes_Active
+FROM UEIOS_V3.dbo.BATCH_RUN_STEP_LABOR_TRANSACTION BRSLT
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP_LABOR BRSL ON BRSLT.BATCH_RUN_STEP_LABOR_ID = BRSL.ID
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP BRS ON BRSL.BATCH_RUN_STEP_ID = BRS.ID
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN BR ON BRS.BATCH_RUN_ID = BR.ID
+INNER JOIN UEIOS_V3.dbo.PERSONNEL P ON BRSL.PERSONNEL_ID = P.ID
+WHERE 
+    ISNULL(BR.IS_DELETED, 0) = 0
+    AND ISNULL(BRS.IS_DELETED, 0) = 0
+    AND ISNULL(BRSL.IS_DELETED, 0) = 0
+    AND ISNULL(BRSLT.IS_DELETED, 0) = 0
+    AND ISNULL(P.IS_DELETED, 0) = 0
+    AND CAST(BRSLT.TRANSACATION_DATE_TIME AS DATE) = CAST(GETDATE() AS DATE)
+    AND BRSLT.TRANSACTION_STATUS = 4 -- Started/Punched In
+    AND NOT EXISTS (
+        SELECT 1 
+        FROM UEIOS_V3.dbo.BATCH_RUN_STEP_LABOR_TRANSACTION BRSLT2
+        WHERE BRSLT2.BATCH_RUN_STEP_LABOR_ID = BRSLT.BATCH_RUN_STEP_LABOR_ID
+        AND BRSLT2.TRANSACTION_STATUS = 7 -- Stopped/Punched Out
+        AND BRSLT2.TRANSACATION_DATE_TIME > BRSLT.TRANSACATION_DATE_TIME
+    )
+ORDER BY Minutes_Active DESC
+```
+
+### Calculate Total Duration Spent by Operator 'X' on a Job Step 'Y' from Job 'Z'
+
+#### Step 1: Identify the job and step information
+```sql
+SELECT 
+    BR.ID AS BatchRunID,
+    BR.NAME AS JobName,
+    BRS.ID AS StepID,
+    BRS.NAME AS StepName
+FROM UEIOS_V3.dbo.BATCH_RUN BR
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP BRS ON BR.ID = BRS.BATCH_RUN_ID
+WHERE BR.NAME = 'Z'
+    AND BRS.NAME = 'Y'
+    AND ISNULL(BR.IS_DELETED, 0) = 0
+    AND ISNULL(BRS.IS_DELETED, 0) = 0
+```
+
+#### Step 2: Find operator information
+``sql
+SELECT 
+    ID, 
+    FIRST_NAME, 
+    LAST_NAME, 
+    FIRST_NAME + ' ' + LAST_NAME AS FullName
+FROM UEIOS_V3.dbo.PERSONNEL
+WHERE FIRST_NAME + ' ' + LAST_NAME = 'CJ Hatton'
+    AND ISNULL(IS_DELETED, 0) = 0
+```
+
+#### Step 3: Calculate duration 
+```sql
+WITH RunningPeriods AS (
+    SELECT 
+        T1.TRANSACTION_DATE_TIME AS StartTime,
+        CASE 
+            WHEN MIN(T2.TRANSACTION_DATE_TIME) IS NULL THEN GETDATE()
+            ELSE MIN(T2.TRANSACTION_DATE_TIME)
+        END AS EndTime
+    FROM UEIOS_V3.dbo.BATCH_RUN_STEP_TRANSACTION T1
+    LEFT JOIN UEIOS_V3.dbo.BATCH_RUN_STEP_TRANSACTION T2 
+        ON T1.BATCH_RUN_STEP_ID = T2.BATCH_RUN_STEP_ID
+        AND T2.TRANSACTION_DATE_TIME > T1.TRANSACTION_DATE_TIME
+        AND T2.TRANSACTION_STATUS = 6
+    WHERE T1.BATCH_RUN_STEP_ID = Y_ID
+        AND T1.TRANSACTION_STATUS = 3
+        AND T1.TRANSACTION_OWNER_USER_ID = X_ID
+    GROUP BY T1.TRANSACTION_DATE_TIME
+)
+SELECT 
+    'Z' AS JobName,
+    'Y' AS StepName,
+    'X' AS OperatorName,
+    SUM(DATEDIFF(SECOND, StartTime, EndTime)) AS TotalDurationSeconds,
+    SUM(DATEDIFF(SECOND, StartTime, EndTime))/60.0 AS TotalDurationMinutes,
+    SUM(DATEDIFF(SECOND, StartTime, EndTime))/3600.0 AS TotalDurationHours
+FROM RunningPeriods
+```
+
+### List all recorded punch in/punch out records of a given job step 'X' and given job 'Y'
+```sql
+WITH PunchEvents AS (
+    SELECT 
+        BR.NAME AS JobName,
+        BR.ID AS JobID,
+        BRS.NAME AS StepName,
+        BRS.ID AS StepID,
+        P.FIRST_NAME + ' ' + P.LAST_NAME AS OperatorName,
+        P.ID AS OperatorID,
+        BRST.TRANSACTION_DATE_TIME AS TransactionTime,
+        BRST.TRANSACTION_STATUS AS StatusCode,
+        ROW_NUMBER() OVER (PARTITION BY P.ID, BRST.TRANSACTION_STATUS ORDER BY BRST.TRANSACTION_DATE_TIME) AS RowNum
+    FROM UEIOS_V3.dbo.BATCH_RUN BR
+    INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP BRS 
+        ON BR.ID = BRS.BATCH_RUN_ID
+    INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP_TRANSACTION BRST 
+        ON BRS.ID = BRST.BATCH_RUN_STEP_ID
+    INNER JOIN UEIOS_V3.dbo.PERSONNEL P 
+        ON BRST.TRANSACTION_OWNER_USER_ID = P.ID
+    WHERE BR.NAME = 'Y'
+        AND BRS.NAME = 'X'
+        AND BRST.TRANSACTION_STATUS IN (3, 6)  -- 3 = Running (Punch In), 6 = Stopped (Punch Out)
+        AND ISNULL(BR.IS_DELETED, 0) = 0
+        AND ISNULL(BRS.IS_DELETED, 0) = 0
+        AND ISNULL(BRST.IS_DELETED, 0) = 0
+),
+PunchInEvents AS (
+    SELECT 
+        JobName,
+        JobID,
+        StepName,
+        StepID,
+        OperatorName,
+        OperatorID,
+        TransactionTime AS PunchInTime,
+        RowNum
+    FROM PunchEvents
+    WHERE StatusCode = 3
+),
+PunchOutEvents AS (
+    SELECT 
+        JobName,
+        JobID,
+        StepName,
+        StepID,
+        OperatorName,
+        OperatorID,
+        TransactionTime AS PunchOutTime,
+        RowNum
+    FROM PunchEvents
+    WHERE StatusCode = 6
+)
+SELECT 
+    PI.JobName,
+    PI.JobID,
+    PI.StepName,
+    PI.StepID,
+    PI.OperatorName,
+    PI.OperatorID,
+    PI.PunchInTime,
+    PO.PunchOutTime,
+    DATEDIFF(SECOND, PI.PunchInTime, PO.PunchOutTime) AS DurationSeconds,
+    DATEDIFF(SECOND, PI.PunchInTime, PO.PunchOutTime)/60.0 AS DurationMinutes
+FROM PunchInEvents PI
+LEFT JOIN PunchOutEvents PO 
+    ON PI.OperatorName = PO.OperatorName 
+    AND PI.RowNum = PO.RowNum
+ORDER BY 
+    PI.OperatorName,
+    PI.PunchInTime
+```
+
+### Who is the project manager for work order: 'X'
+<assumption>project manager is the same person who created the work order</assumption>
+
+```sql
+SELECT 
+    SS.NAME AS WorkOrder,
+    CONCAT(P.FIRST_NAME, ' ', P.LAST_NAME) AS ProjectManager,
+    P.POSITION AS Position
+FROM UEIOS_V3.dbo.SALES_SCHEDULING SS
+JOIN UEIOS_V3.dbo.PERSONNEL P ON SS.CREATED_BY = P.ID
+WHERE 
+    SS.NAME = 'X'
+    AND ISNULL(SS.IS_DELETED, 0) = 0
+```
+
+### What employees on the floor were working on jobs today
+```sql
+SELECT 
+    BR.NAME AS Job,
+    BRS.NAME AS Step,
+    CONCAT(P.FIRST_NAME, ' ', P.LAST_NAME) AS Operator,
+    BRSLT.TRANSACATION_DATE_TIME AS Activity_Time,
+    CASE 
+        WHEN BRSLT.TRANSACTION_STATUS = 4 THEN 'Started'
+        WHEN BRSLT.TRANSACTION_STATUS = 7 THEN 'Stopped'
+        ELSE 'Unknown'
+    END AS Activity
+FROM UEIOS_V3.dbo.BATCH_RUN_STEP_LABOR_TRANSACTION BRSLT
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP_LABOR BRSL ON BRSLT.BATCH_RUN_STEP_LABOR_ID = BRSL.ID
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP BRS ON BRSL.BATCH_RUN_STEP_ID = BRS.ID
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN BR ON BRS.BATCH_RUN_ID = BR.ID
+INNER JOIN UEIOS_V3.dbo.PERSONNEL P ON BRSL.PERSONNEL_ID = P.ID
+WHERE 
+    ISNULL(BR.IS_DELETED, 0) = 0
+    AND ISNULL(BRS.IS_DELETED, 0) = 0
+    AND ISNULL(BRSL.IS_DELETED, 0) = 0
+    AND ISNULL(BRSLT.IS_DELETED, 0) = 0
+    AND ISNULL(P.IS_DELETED, 0) = 0
+    AND CAST(BRSLT.TRANSACATION_DATE_TIME AS DATE) = CAST(GETDATE() AS DATE)
+ORDER BY BRSLT.TRANSACATION_DATE_TIME DESC
+```
+
+### Who all punched in today
+```sql
+SELECT DISTINCT 
+    CONCAT(P.FIRST_NAME, ' ', P.LAST_NAME) AS Operator, 
+    MIN(BRSLT.TRANSACATION_DATE_TIME) AS First_Punch
+FROM UEIOS_V3.dbo.BATCH_RUN_STEP_LABOR_TRANSACTION BRSLT
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP_LABOR BRSL ON BRSLT.BATCH_RUN_STEP_LABOR_ID = BRSL.ID
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP BRS ON BRSL.BATCH_RUN_STEP_ID = BRS.ID
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN BR ON BRS.BATCH_RUN_ID = BR.ID
+INNER JOIN UEIOS_V3.dbo.PERSONNEL P ON BRSL.PERSONNEL_ID = P.ID
+WHERE 
+    ISNULL(BR.IS_DELETED, 0) = 0
+    AND ISNULL(BRS.IS_DELETED, 0) = 0
+    AND ISNULL(BRSL.IS_DELETED, 0) = 0
+    AND ISNULL(BRSLT.IS_DELETED, 0) = 0
+    AND ISNULL(P.IS_DELETED, 0) = 0
+    AND CAST(BRSLT.TRANSACATION_DATE_TIME AS DATE) = CAST(GETDATE() AS DATE)
+    AND BRSLT.TRANSACTION_STATUS = 4 -- Started/Punched In
+GROUP BY CONCAT(P.FIRST_NAME, ' ', P.LAST_NAME)
+ORDER BY First_Punch;
+```
+
+### What machines were run yesterday
+```sql
+SELECT DISTINCT
+    FA.NAME AS Machine_Name,
+    BR.NAME AS Job_Name,
+    BRS.NAME AS Step_Name,
+    BRSET.TRANSACTION_DATE_TIME AS Transaction_Time
+FROM UEIOS_V3.dbo.BATCH_RUN_STEP_EQUIPMENT_TRANSACTIONS BRSET
+INNER JOIN UEIOS_V3.dbo.FACILITY_ASSET FA ON BRSET.FACILITY_ASSET_ID = FA.ID
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP_EQUIPMENT BRSE ON BRSET.BATCH_RUN_STEP_EQUIPMENT_ID = BRSE.ID
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN_STEP BRS ON BRSE.BATCH_RUN_STEP_ID = BRS.ID
+INNER JOIN UEIOS_V3.dbo.BATCH_RUN BR ON BRS.BATCH_RUN_ID = BR.ID
+WHERE 
+    CAST(BRSET.TRANSACTION_DATE_TIME AS DATE) = CAST(DATEADD(day, -1, GETDATE()) AS DATE)
+    AND ISNULL(BRSET.IS_DELETED, 0) = 0
+    AND ISNULL(FA.IS_DELETED, 0) = 0
+    AND ISNULL(BRSE.IS_DELETED, 0) = 0
+    AND ISNULL(BRS.IS_DELETED, 0) = 0
+    AND ISNULL(BR.IS_DELETED, 0) = 0
+ORDER BY FA.NAME, BRSET.TRANSACTION_DATE_TIME DESC
+```
+
+### Additional Note:
+1. Work orders are stored in the SALES_SCHEDULING table, while jobs are stored in the BATCH_RUN table.
+2. A single work order (in SALES_SCHEDULING) can generate multiple jobs (in BATCH_RUN).
+3. Work orders and jobs have separate status tracking systems with different status codes.
+4. Job completion (in BATCH_RUN) does not automatically update the corresponding work order status (in SALES_SCHEDULING).
+5. A job step can have multiple punch in/punch out records. It wont be completed in one go.
+6. When analyzing completion metrics, it's important to specify whether the analysis is for work orders or jobs.
+7. Always filter out rows that dont have IS_DELETED=0, unless specifically asked to include them.
+8. There is a bug in arcstone db, SALES_SCHEDULING table where column SALES_ORDER_STATUS is having wrong status for completed and in progress. Only use SALES_ORDER_STATUS to find not scheduled work orders.
+9. Because of the existing bug, we can assume if all jobs of work order is completed, then work order is also completed.
+10. Certain column names are spelled 'TRANSACATION' instead of 'TRANSACTION'. Its not a spelling mistake. Don't auto correct.

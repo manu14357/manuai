@@ -1,0 +1,12 @@
+{
+  "description": "Sample queries for testing ManuAI",
+  "queries": [
+    "What tables do we have in the database?",
+    "Show me the top 5 customers by revenue",
+    "Create a chart of sales by month",
+    "What's the total revenue for this year?",
+    "Analyze the database structure",
+    "Export customer data as CSV"
+  ],
+  "created_at": "1752335456.5087392"
+}

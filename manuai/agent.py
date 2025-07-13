@@ -328,3 +328,120 @@ REQUIRED ACTION: Respond conversationally without using any database tools or fu
     raise RuntimeError(
         "Maximum number of iterations reached. Please try again with a different query."
     )
+
+
+def ask_stream(
+    query: str, history: List[BaseMessage], llm: BaseChatModel, max_iterations: int = 10
+):
+    """
+    Streaming version of ask function that yields response chunks as they arrive.
+    """
+    log_panel(title="User Request", content=f"Query: {query}", border_style=green_border_style)
+
+    # Classify query type for better tool usage
+    query_type, classification_reasoning = classify_query_type(query)
+    log_panel(
+        title="Query Classification", 
+        content=f"Type: {query_type.upper()}\nReasoning: {classification_reasoning}",
+        border_style="cyan"
+    )
+
+    # Track performance
+    start_time = time.time()
+    tool_calls_made = 0
+
+    # Always bind tools, but guide the model on when to use them
+    tools = get_available_tools()
+    llm_with_tools = llm.bind_tools(tools)
+
+    n_iterations = 0
+    messages = history.copy()
+    
+    # Add enhanced context to help the model understand query classification
+    if query_type == "database":
+        enhanced_query = f"""
+Query: {query}
+
+[SYSTEM DIRECTIVE: This is a DATABASE query. You MUST use the appropriate database tools to provide real data. 
+Classification: {classification_reasoning}
+REQUIRED ACTIONS: 
+1. Use database tools (sample_table, list_tables, describe_table, etc.) to get actual data from the database
+2. Format the response professionally with proper structure and explanations
+3. Provide business context and insights about the data
+4. Use tables, headers, and bullet points for clear presentation
+5. Explain what each column/field represents
+6. Highlight key patterns or insights in the data
+7. Make the response comprehensive and actionable for business users
+DO NOT provide any made-up or example data. Only return real database results with proper formatting and context.]
+"""
+    else:
+        enhanced_query = f"""
+Query: {query}
+
+[SYSTEM CONTEXT: This is a CASUAL conversation query. 
+{classification_reasoning}
+REQUIRED ACTION: Respond conversationally without using any database tools or functions.]
+"""
+    
+    messages.append(HumanMessage(content=enhanced_query))
+
+    # DON'T signal streaming start here - let loading continue during tool calls
+
+    while n_iterations < max_iterations:
+        # First, check if we need to use tools by getting a non-streaming response
+        response = llm_with_tools.invoke(messages)
+        messages.append(response)
+        
+        if not response.tool_calls:
+            # No tool calls needed, now stream the final response
+            # Signal that response streaming is about to begin (THIS is when loading should disappear)
+            yield "🔄 STREAMING_START"
+            
+            # We need to regenerate the final response with streaming
+            # Remove the last non-streaming response
+            streaming_messages = messages[:-1]
+            
+            # Stream the response
+            for chunk in llm_with_tools.stream(streaming_messages):
+                if hasattr(chunk, 'content') and chunk.content:
+                    yield chunk.content
+            
+            # Log performance metrics
+            total_time = time.time() - start_time
+            log_panel(
+                title="Performance Metrics",
+                content=f"Total time: {total_time:.3f}s | Tool calls: {tool_calls_made} | Iterations: {n_iterations + 1}",
+                border_style="blue"
+            )
+            
+            # Log response type for debugging
+            log_panel(
+                title="Response Summary",
+                content=f"Query type: {query_type.upper()} | Tools used: {tool_calls_made > 0}",
+                border_style="green"
+            )
+            return
+        
+        # Handle tool calls (non-streaming) - loading continues during this phase
+        for tool_call in response.tool_calls:
+            tool_calls_made += 1
+            log_panel(
+                title=f"Tool Call #{tool_calls_made}",
+                content=f"Tool: {tool_call['name']}\nArgs: {tool_call['args']}",
+                border_style="magenta"
+            )
+            tool_response = call_tool(tool_call)
+            messages.append(tool_response)
+        n_iterations += 1
+
+    # Log timeout scenario
+    total_time = time.time() - start_time
+    log_panel(
+        title="Performance Metrics (Timeout)",
+        content=f"Total time: {total_time:.3f}s | Tool calls: {tool_calls_made} | Iterations: {n_iterations}",
+        border_style="red"
+    )
+
+    raise RuntimeError(
+        "Maximum number of iterations reached. Please try again with a different query."
+    )

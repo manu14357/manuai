@@ -30,6 +30,14 @@ class Config:
         APP_HOME = Path(os.getenv("APP_HOME", Path(__file__).parent.parent))
         DATA_DIR = APP_HOME / "data"
         DATABASE_PATH = DATA_DIR / "ecommerce.sqlite"
+        
+        # ArcOps Manufacturing Databases
+        ARCOPS_500_DB = DATA_DIR / "arcops_manufacturing_500.db"
+        ARCOPS_200_DB = DATA_DIR / "arcops_manufacturing_200.db"
+        
+        # Additional databases
+        FAKE_DB = DATA_DIR / "fake_database.db"
+        MEMORY_DB = DATA_DIR / "memory.db"
 
 
 def seed_everything(seed: int = Config.SEED):

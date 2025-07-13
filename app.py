@@ -1,6 +1,8 @@
 import json
 import random
+import sqlite3
 import time
+from contextlib import contextmanager
 from pathlib import Path
 
 import streamlit as st
@@ -8,16 +10,34 @@ from dotenv import load_dotenv
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from manuai.agent import ask, create_history
+from manuai.agent import ask, ask_stream, create_history
 from manuai.config import Config
 from manuai.models import create_llm
 from manuai.optimizations import (DynamicComplexityRouter,
                                   optimize_query_execution)
 from manuai.performance_dashboard import render_performance_dashboard
 from manuai.smart_optimizer import get_query_optimizer
-from manuai.tools import with_sql_cursor
+from manuai.tools import set_current_database, with_sql_cursor
 
 load_dotenv()
+
+
+@contextmanager
+def with_multi_db_cursor(db_path: str):
+    """Context manager for database connections with multiple database support."""
+    conn = sqlite3.connect(db_path)
+    try:
+        # Enable optimizations
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
+        conn.execute("PRAGMA cache_size=10000")
+        conn.execute("PRAGMA temp_store=MEMORY")
+        
+        cursor = conn.cursor()
+        yield cursor
+    finally:
+        conn.close()
+
 
 LOADING_MESSAGES = [
     "Consulting the ancient tomes of SQL wisdom...",
@@ -104,11 +124,17 @@ with fine_tuning_tab:
     """)
     
     # Get available tables
-    with with_sql_cursor() as cursor:
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-        )
-        available_tables = [row[0] for row in cursor.fetchall()]
+    try:
+        # Use the selected database from session state, or default to the main database
+        db_path = getattr(st.session_state, 'selected_database', Config.Path.DATABASE_PATH)
+        with with_multi_db_cursor(str(db_path)) as cursor:
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+            )
+            available_tables = [row[0] for row in cursor.fetchall()]
+    except Exception as e:
+        st.error(f"Error accessing database: {str(e)}")
+        available_tables = []
     
     # Table selection
     selected_tables = st.multiselect(
@@ -120,13 +146,15 @@ with fine_tuning_tab:
     if st.button("Start Fine-Tuning"):
         with st.spinner("Fine-tuning database..."):
             try:
+                # Use the selected database from session state
+                db_path = getattr(st.session_state, 'selected_database', Config.Path.DATABASE_PATH)
                 tables_to_tune = selected_tables if selected_tables else None
                 
                 if tables_to_tune:
                     results = []
                     for table in tables_to_tune:
                         # Process one table at a time
-                        with with_sql_cursor() as cursor:
+                        with with_multi_db_cursor(str(db_path)) as cursor:
                             cursor.execute(f"PRAGMA table_info('{table}')")
                             columns = cursor.fetchall()
                             
@@ -148,14 +176,14 @@ with fine_tuning_tab:
                                 index_name = f"idx_{table}_{fk_column}".lower()
                                 
                                 try:
-                                    with with_sql_cursor() as cursor:
-                                        cursor.execute(f"CREATE INDEX {index_name} ON {table}({fk_column})")
+                                    with with_multi_db_cursor(str(db_path)) as cursor:
+                                        cursor.execute(f"CREATE INDEX IF NOT EXISTS {index_name} ON {table}({fk_column})")
                                         improvements.append(f"Added index on foreign key column '{fk_column}'")
                                 except Exception as e:
                                     st.warning(f"Could not create index on {fk_column}: {str(e)}")
                         
                         # Analyze table for query planning
-                        with with_sql_cursor() as cursor:
+                        with with_multi_db_cursor(str(db_path)) as cursor:
                             cursor.execute(f"ANALYZE {table}")
                             improvements.append("Analyzed table for improved query planning")
                         
@@ -231,20 +259,63 @@ with fine_tuning_tab:
             st.write("No fine-tuning history available")
 
 with main_tab:
+    # Database selection
+    st.subheader("Database Selection")
+    
+    # Get available databases
+    available_databases = {
+        "E-commerce Database": Config.Path.DATABASE_PATH,
+        "ArcOps Manufacturing (500 tables)": Config.Path.ARCOPS_500_DB,
+        "ArcOps Manufacturing (200 tables)": Config.Path.ARCOPS_200_DB,
+        "Fake Database": Config.Path.FAKE_DB,
+        "Memory Database": Config.Path.MEMORY_DB,
+    }
+    
+    # Filter to only show databases that exist
+    existing_databases = {}
+    for name, path in available_databases.items():
+        if Path(path).exists():
+            existing_databases[name] = path
+    
+    if not existing_databases:
+        st.error("No databases found! Please generate databases first using the scripts in the bin/ directory.")
+        st.stop()
+    
+    # Database selector
+    selected_db_name = st.selectbox(
+        "Select Database",
+        options=list(existing_databases.keys()),
+        index=0
+    )
+    
+    selected_db_path = existing_databases[selected_db_name]
+    
+    # Store selected database in session state
+    st.session_state.selected_database = selected_db_path
+    
+    # Set the current database for the tools to use
+    set_current_database(str(selected_db_path))
+    
+    st.info(f"Currently using: **{selected_db_name}**")
+    
     # Display DB tables
     with st.expander("Database Tables"):
-        with with_sql_cursor() as cursor:
-            # Get list of tables
-            cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-            )
-            tables = [row[0] for row in cursor.fetchall()]
+        try:
+            with with_multi_db_cursor(str(selected_db_path)) as cursor:
+                # Get list of tables
+                cursor.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+                )
+                tables = [row[0] for row in cursor.fetchall()]
 
-            st.write("### Available Tables")
-            for table in tables:
-                cursor.execute(f"SELECT COUNT(*) FROM {table}")
-                count = cursor.fetchone()[0]
-                st.write(f"- {table} ({count} rows)")
+                st.write("### Available Tables")
+                for table in tables:
+                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    count = cursor.fetchone()[0]
+                    st.write(f"- {table} ({count} rows)")
+        except Exception as e:
+            st.error(f"Error accessing database: {str(e)}")
+            st.write("Please ensure the database file exists and is accessible.")
 
     # Chat interface
     for message in st.session_state.messages:
@@ -262,7 +333,9 @@ with main_tab:
             st.markdown(prompt)
         with st.chat_message("ai", avatar="😇"):
             message_placeholder = st.empty()
-            message_placeholder.status(random.choice(LOADING_MESSAGES), state="running")
+            
+            # Show loading message initially
+            loading_message = message_placeholder.status(random.choice(LOADING_MESSAGES), state="running")
 
             # Get query optimization suggestions
             query_optimizer = get_query_optimizer()
@@ -279,11 +352,42 @@ with main_tab:
                 prompt, st.session_state.messages
             )
 
-            # Generate response using the agent
-            response = ask(optimized_query, optimized_history, model, max_iterations=10)
-
-            # Update message placeholder with response
-            message_placeholder.markdown(response)
+            # Stream the response
+            response_text = ""
+            streaming_started = False
+            
+            try:
+                for chunk in ask_stream(optimized_query, optimized_history, model, max_iterations=10):
+                    # Handle control signals
+                    if chunk == "🔄 STREAMING_START":
+                        # Hide loading message when actual streaming starts
+                        if not streaming_started:
+                            message_placeholder.empty()
+                            streaming_started = True
+                        continue
+                    
+                    # Clear loading message on first real content (fallback safety)
+                    if not streaming_started:
+                        message_placeholder.empty()
+                        streaming_started = True
+                    
+                    # Add chunk to response
+                    response_text += chunk
+                    # Update the display with current text and a blinking cursor
+                    message_placeholder.markdown(response_text + "▌")
+                
+                # Remove cursor when streaming is complete
+                message_placeholder.markdown(response_text)
+                
+            except Exception as e:
+                # Clear loading message on error
+                if not streaming_started:
+                    message_placeholder.empty()
+                
+                # Fallback to non-streaming if streaming fails
+                st.warning("Streaming failed, using fallback response...")
+                response_text = ask(optimized_query, optimized_history, model, max_iterations=10)
+                message_placeholder.markdown(response_text)
 
         # Add response to chat history
-        st.session_state.messages.append(AIMessage(response))
+        st.session_state.messages.append(AIMessage(response_text))

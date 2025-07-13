@@ -7,7 +7,7 @@ import sqlite3
 
 from faker import Faker
 
-from querymancer.config import Config, seed_everything
+from manuai.config import Config, seed_everything
 
 PRODUCT_CATEGORIES = [
     "Electronics",

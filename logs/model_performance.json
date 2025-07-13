@@ -563,6 +563,138 @@
       "query": "i want first 5 orders details",
       "complexity": 0.048,
       "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T21:29:42.901568",
+      "query": "hey hi",
+      "complexity": 0.016,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T22:12:46.946683",
+      "query": "hi",
+      "complexity": 0.008,
+      "selected_model": "mistral-nemo:12b"
+    },
+    {
+      "timestamp": "2025-07-12T22:14:15.472236",
+      "query": "tell me about database tables",
+      "complexity": 0.04,
+      "selected_model": "mistral-nemo:12b"
+    },
+    {
+      "timestamp": "2025-07-12T22:16:22.901883",
+      "query": "how many products are there?",
+      "complexity": 0.0275,
+      "selected_model": "mistral-nemo:12b"
+    },
+    {
+      "timestamp": "2025-07-12T22:18:07.083869",
+      "query": "hai",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T22:22:46.234070",
+      "query": "hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T22:23:11.068945",
+      "query": "What are the tables in the database?",
+      "complexity": 0.0385,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T22:26:45.872363",
+      "query": "Hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T22:27:17.747980",
+      "query": "Tell me about all products in the database...",
+      "complexity": 0.034,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T22:30:01.510388",
+      "query": "hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T22:30:56.644675",
+      "query": "What products are there in the database...show me some of the product details...",
+      "complexity": 0.049,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T22:56:32.551633",
+      "query": "Who are the top 5 customers?",
+      "complexity": 0.08299999999999999,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T22:59:25.617892",
+      "query": "show me the first 5 customers?",
+      "complexity": 0.033,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T23:02:19.760920",
+      "query": "show me the first 5 customers?",
+      "complexity": 0.033,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T23:15:17.863635",
+      "query": "Give me breif information ab?out the present database",
+      "complexity": 0.0465,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T23:21:19.596785",
+      "query": "Hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T23:22:18.371820",
+      "query": "Tell me about the ArcOps Manufacturing Database?",
+      "complexity": 0.0385,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T23:25:07.625601",
+      "query": "Data mining to identify trends and patterns in sales orders and inventory transactions.",
+      "complexity": 0.17149999999999999,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T23:29:57.692368",
+      "query": "Hi",
+      "complexity": 0.008,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T23:30:32.073753",
+      "query": "Tell me about the ArcOps Manufacturing database?",
+      "complexity": 0.0385,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T23:32:27.436233",
+      "query": "Analyzing the sales order data to identify trends in customer demand?",
+      "complexity": 0.11049999999999999,
+      "selected_model": "llama3.1:8b"
+    },
+    {
+      "timestamp": "2025-07-12T23:35:58.439653",
+      "query": "Tell me about the Employees in the database?",
+      "complexity": 0.044000000000000004,
+      "selected_model": "llama3.1:8b"
     }
   ],
   "feedback": [

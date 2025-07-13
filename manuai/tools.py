@@ -9,8 +9,22 @@ from langchain_core.tools import BaseTool
 
 from manuai.config import Config
 from manuai.database_optimizer import (cached_query, get_optimizer,
-                                            with_optimized_cursor)
+                                       with_optimized_cursor)
 from manuai.logging import log, log_panel
+
+# Global variable to store the current database path for multi-database support
+_current_database_path = None
+
+
+def set_current_database(db_path: str):
+    """Set the current database path for tools to use."""
+    global _current_database_path
+    _current_database_path = db_path
+
+
+def get_current_database() -> str:
+    """Get the current database path, default to Config.Path.DATABASE_PATH."""
+    return _current_database_path or str(Config.Path.DATABASE_PATH)
 
 
 def get_available_tools() -> List[BaseTool]:
@@ -25,10 +39,24 @@ def call_tool(tool_call: ToolCall) -> Any:
 
 
 @contextmanager
-def with_sql_cursor(readonly=True):
+def with_sql_cursor(readonly=True, db_path=None):
     """Use optimized database cursor with connection pooling."""
-    with with_optimized_cursor(readonly=readonly) as cursor:
+    if db_path is None:
+        db_path = get_current_database()
+    
+    # Always use direct SQLite connection for multi-database support
+    conn = sqlite3.connect(db_path)
+    try:
+        # Enable optimizations
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
+        conn.execute("PRAGMA cache_size=10000")
+        conn.execute("PRAGMA temp_store=MEMORY")
+        
+        cursor = conn.cursor()
         yield cursor
+    finally:
+        conn.close()
 
 
 @tool(parse_docstring=True)
@@ -46,8 +74,9 @@ def list_tables(reasoning: str) -> str:
         content=f"Reasoning: {reasoning}",
     )
     try:
-        optimizer = get_optimizer()
-        tables = optimizer.get_all_tables_cached()
+        with with_sql_cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+            tables = [row[0] for row in cursor.fetchall()]
         return str(tables)
     except Exception as e:
         log(f"[red]Error listing tables: {str(e)}[/red]")
@@ -72,7 +101,9 @@ def sample_table(reasoning: str, table_name: str, row_sample_size: int) -> str:
     )
     try:
         query = f"SELECT * FROM {table_name} LIMIT {row_sample_size}"
-        rows = cached_query(query)
+        with with_sql_cursor() as cursor:
+            cursor.execute(query)
+            rows = cursor.fetchall()
         return "\n".join([str(row) for row in rows])
     except Exception as e:
         log(f"[red]Error sampling table: {str(e)}[/red]")
@@ -95,8 +126,9 @@ def describe_table(reasoning: str, table_name: str) -> str:
         content=f"Table: {table_name}\nReasoning: {reasoning}",
     )
     try:
-        optimizer = get_optimizer()
-        rows = optimizer.get_table_schema_cached(table_name)
+        with with_sql_cursor() as cursor:
+            cursor.execute(f"PRAGMA table_info({table_name})")
+            rows = cursor.fetchall()
         return "\n".join([str(row) for row in rows])
     except Exception as e:
         log(f"[red]Error describing table: {str(e)}[/red]")
@@ -119,7 +151,9 @@ def execute_sql(reasoning: str, sql_query: str) -> str:
         content=f"Query: {sql_query}\nReasoning: {reasoning}",
     )
     try:
-        rows = cached_query(sql_query)
+        with with_sql_cursor() as cursor:
+            cursor.execute(sql_query)
+            rows = cursor.fetchall()
         return "\n".join([str(row) for row in rows])
     except Exception as e:
         log(f"[red]Error running query: {str(e)}[/red]")

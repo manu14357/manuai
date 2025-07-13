@@ -1,0 +1,718 @@
+#!/usr/bin/env python3
+"""
+ArcOps Manufacturing Database Generator - Part 2 (500 Tables)
+Continues building the complex manufacturing database with additional tables
+"""
+
+import random
+import sqlite3
+import sys
+from datetime import datetime, timedelta
+
+from faker import Faker
+
+# Initialize Faker
+fake = Faker()
+
+# Database configuration
+DB_PATH = '/Users/manu/Downloads/manuai/data/arcops_complex_500.sqlite'
+
+def create_database_connection():
+    """Create database connection and enable foreign keys."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute('PRAGMA foreign_keys = ON')
+    return conn
+
+def create_inventory_tables(conn):
+    """Create inventory and materials management tables."""
+    cursor = conn.cursor()
+    
+    # INVENTORY_ITEM_TYPE
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS INVENTORY_ITEM_TYPE (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            NAME TEXT NOT NULL,
+            DESCRIPTION TEXT,
+            CATEGORY TEXT,
+            UNIT_OF_MEASURE TEXT,
+            STANDARD_COST REAL,
+            REORDER_LEVEL INTEGER,
+            REORDER_QUANTITY INTEGER,
+            LEAD_TIME_DAYS INTEGER,
+            IS_ACTIVE INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            CREATED_BY INTEGER,
+            LAST_MODIFIED_DATE_TIME DATETIME,
+            LAST_MODIFIED_BY INTEGER,
+            FOREIGN KEY (CREATED_BY) REFERENCES PERSONNEL(ID),
+            FOREIGN KEY (LAST_MODIFIED_BY) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    # INVENTORY_ITEM
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS INVENTORY_ITEM (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            INVENTORY_ITEM_TYPE_ID INTEGER NOT NULL,
+            BARCODE TEXT UNIQUE,
+            SERIAL_NUMBER TEXT,
+            BATCH_NUMBER TEXT,
+            LOT_NUMBER TEXT,
+            EXPIRY_DATE DATETIME,
+            MANUFACTURE_DATE DATETIME,
+            CURRENT_QUANTITY REAL DEFAULT 0,
+            RESERVED_QUANTITY REAL DEFAULT 0,
+            AVAILABLE_QUANTITY REAL DEFAULT 0,
+            LOCATION_ID INTEGER,
+            AREA_ID INTEGER,
+            SUPPLIER_ID INTEGER,
+            QUALITY_STATUS INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            LAST_TRANSACTION_DATE_TIME DATETIME,
+            NOTES TEXT,
+            FOREIGN KEY (INVENTORY_ITEM_TYPE_ID) REFERENCES INVENTORY_ITEM_TYPE(ID),
+            FOREIGN KEY (LOCATION_ID) REFERENCES LOCATION(ID),
+            FOREIGN KEY (AREA_ID) REFERENCES AREA(ID),
+            FOREIGN KEY (SUPPLIER_ID) REFERENCES SUPPLIER(ID)
+        )
+    ''')
+    
+    # INVENTORY_TRANSACTION
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS INVENTORY_TRANSACTION (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            INVENTORY_ITEM_ID INTEGER NOT NULL,
+            TRANSACTION_TYPE INTEGER NOT NULL,
+            QUANTITY REAL NOT NULL,
+            UNIT_COST REAL,
+            TOTAL_COST REAL,
+            TRANSACTION_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            REFERENCE_TYPE TEXT,
+            REFERENCE_ID INTEGER,
+            FROM_LOCATION_ID INTEGER,
+            TO_LOCATION_ID INTEGER,
+            PERFORMED_BY INTEGER,
+            REASON TEXT,
+            NOTES TEXT,
+            IS_DELETED INTEGER DEFAULT 0,
+            FOREIGN KEY (INVENTORY_ITEM_ID) REFERENCES INVENTORY_ITEM(ID),
+            FOREIGN KEY (FROM_LOCATION_ID) REFERENCES LOCATION(ID),
+            FOREIGN KEY (TO_LOCATION_ID) REFERENCES LOCATION(ID),
+            FOREIGN KEY (PERFORMED_BY) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    # BATCH_RUN_STEP_RESOURCE
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS BATCH_RUN_STEP_RESOURCE (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            AMOUNT_USED REAL DEFAULT 0,
+            AMOUNT_GENERATED REAL DEFAULT 0,
+            DATE_TIME_USED DATETIME,
+            USED_BY INTEGER,
+            NOTES TEXT,
+            BATCH_RUN_STEP_ID INTEGER NOT NULL,
+            BATCH_TEMPLATE_STEP_RESOURCE_ID INTEGER,
+            INV_ITEM_LINK_ID INTEGER,
+            IS_DELETED INTEGER DEFAULT 0,
+            RESOURCE_LINK_ID INTEGER,
+            INV_ITEM_TYPE_LINK_ID INTEGER,
+            PLANNED_AMOUNT REAL,
+            IN_OUT INTEGER,
+            CATEGORY INTEGER,
+            TYPE INTEGER,
+            USE_BOM INTEGER DEFAULT 0,
+            FOREIGN KEY (BATCH_RUN_STEP_ID) REFERENCES BATCH_RUN_STEP(ID),
+            FOREIGN KEY (USED_BY) REFERENCES PERSONNEL(ID),
+            FOREIGN KEY (INV_ITEM_LINK_ID) REFERENCES INVENTORY_ITEM(ID),
+            FOREIGN KEY (INV_ITEM_TYPE_LINK_ID) REFERENCES INVENTORY_ITEM_TYPE(ID)
+        )
+    ''')
+    
+    # BATCH_RUN_STEP_RESOURCE_TRANSACTION
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS BATCH_RUN_STEP_RESOURCE_TRANSACTION (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            BATCH_RUN_STEP_RESOURCE_LINK_ID INTEGER NOT NULL,
+            QUANTITY REAL NOT NULL,
+            BARCODE TEXT,
+            INVENTORY_ITEM_LINK_ID INTEGER,
+            FROM_AREA_LINK_ID INTEGER,
+            TO_AREA_LINK_ID INTEGER,
+            DESTINATION_INVENTORY_ITEM_LINK_ID INTEGER,
+            TYPE TEXT,
+            REASON TEXT,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            CREATED_BY INTEGER,
+            CREATED_BY_USERNAME TEXT,
+            MODIFIED_DATE_TIME DATETIME,
+            MODIFIED_BY INTEGER,
+            MODIFIED_BY_USERNAME TEXT,
+            COMMENT TEXT,
+            INVENTORY_ITEM_TYPE_LINK_ID INTEGER,
+            FULLY_MOVE INTEGER DEFAULT 0,
+            TRANSFER_ORDER_ITEM_LINK_ID INTEGER,
+            TRACED_QUANTITY REAL,
+            FOREIGN KEY (BATCH_RUN_STEP_RESOURCE_LINK_ID) REFERENCES BATCH_RUN_STEP_RESOURCE(ID),
+            FOREIGN KEY (INVENTORY_ITEM_LINK_ID) REFERENCES INVENTORY_ITEM(ID),
+            FOREIGN KEY (DESTINATION_INVENTORY_ITEM_LINK_ID) REFERENCES INVENTORY_ITEM(ID),
+            FOREIGN KEY (CREATED_BY) REFERENCES PERSONNEL(ID),
+            FOREIGN KEY (MODIFIED_BY) REFERENCES PERSONNEL(ID),
+            FOREIGN KEY (INVENTORY_ITEM_TYPE_LINK_ID) REFERENCES INVENTORY_ITEM_TYPE(ID)
+        )
+    ''')
+    
+    conn.commit()
+    print("✅ Inventory tables created successfully")
+
+def create_location_tables(conn):
+    """Create location and area management tables."""
+    cursor = conn.cursor()
+    
+    # LOCATION
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS LOCATION (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            NAME TEXT NOT NULL,
+            DESCRIPTION TEXT,
+            LOCATION_TYPE INTEGER DEFAULT 1,
+            PARENT_LOCATION_ID INTEGER,
+            ADDRESS TEXT,
+            COORDINATES_LAT REAL,
+            COORDINATES_LONG REAL,
+            CAPACITY REAL,
+            CURRENT_UTILIZATION REAL DEFAULT 0,
+            MANAGER_ID INTEGER,
+            IS_ACTIVE INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            NOTES TEXT,
+            FOREIGN KEY (PARENT_LOCATION_ID) REFERENCES LOCATION(ID),
+            FOREIGN KEY (MANAGER_ID) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    # AREA
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS AREA (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            NAME TEXT NOT NULL,
+            DESCRIPTION TEXT,
+            LOCATION_ID INTEGER,
+            AREA_TYPE INTEGER DEFAULT 1,
+            CAPACITY REAL,
+            CURRENT_UTILIZATION REAL DEFAULT 0,
+            TEMPERATURE_CONTROLLED INTEGER DEFAULT 0,
+            HUMIDITY_CONTROLLED INTEGER DEFAULT 0,
+            SECURITY_LEVEL INTEGER DEFAULT 1,
+            SUPERVISOR_ID INTEGER,
+            IS_ACTIVE INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            NOTES TEXT,
+            FOREIGN KEY (LOCATION_ID) REFERENCES LOCATION(ID),
+            FOREIGN KEY (SUPERVISOR_ID) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    # WORKSTATION
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS WORKSTATION (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            NAME TEXT NOT NULL,
+            DESCRIPTION TEXT,
+            AREA_ID INTEGER,
+            WORKSTATION_TYPE INTEGER DEFAULT 1,
+            CAPACITY INTEGER DEFAULT 1,
+            CURRENT_OPERATORS INTEGER DEFAULT 0,
+            PRIMARY_ASSET_ID INTEGER,
+            IS_ACTIVE INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            SHIFT_SCHEDULE TEXT,
+            SAFETY_REQUIREMENTS TEXT,
+            NOTES TEXT,
+            FOREIGN KEY (AREA_ID) REFERENCES AREA(ID),
+            FOREIGN KEY (PRIMARY_ASSET_ID) REFERENCES FACILITY_ASSET(ID)
+        )
+    ''')
+    
+    conn.commit()
+    print("✅ Location tables created successfully")
+
+def create_quality_tables(conn):
+    """Create quality control and inspection tables."""
+    cursor = conn.cursor()
+    
+    # QUALITY_CONTROL_PLAN
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS QUALITY_CONTROL_PLAN (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            NAME TEXT NOT NULL,
+            DESCRIPTION TEXT,
+            VERSION TEXT DEFAULT '1.0',
+            PRODUCT_TYPE_ID INTEGER,
+            CUSTOMER_ID INTEGER,
+            INSPECTION_FREQUENCY INTEGER DEFAULT 1,
+            SAMPLE_SIZE INTEGER DEFAULT 1,
+            ACCEPTANCE_CRITERIA TEXT,
+            REJECTION_CRITERIA TEXT,
+            IS_ACTIVE INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            CREATED_BY INTEGER,
+            APPROVED_BY INTEGER,
+            APPROVED_DATE DATETIME,
+            NOTES TEXT,
+            FOREIGN KEY (CUSTOMER_ID) REFERENCES CUSTOMER(ID),
+            FOREIGN KEY (CREATED_BY) REFERENCES PERSONNEL(ID),
+            FOREIGN KEY (APPROVED_BY) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    # QUALITY_INSPECTION
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS QUALITY_INSPECTION (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            INSPECTION_NUMBER TEXT UNIQUE,
+            BATCH_RUN_STEP_ID INTEGER,
+            QUALITY_CONTROL_PLAN_ID INTEGER,
+            INSPECTOR_ID INTEGER,
+            INSPECTION_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            SAMPLE_SIZE INTEGER,
+            ITEMS_PASSED INTEGER DEFAULT 0,
+            ITEMS_FAILED INTEGER DEFAULT 0,
+            OVERALL_RESULT INTEGER DEFAULT 0,
+            DEFECT_RATE REAL DEFAULT 0.0,
+            INSPECTION_NOTES TEXT,
+            CORRECTIVE_ACTION TEXT,
+            IS_DELETED INTEGER DEFAULT 0,
+            FOREIGN KEY (BATCH_RUN_STEP_ID) REFERENCES BATCH_RUN_STEP(ID),
+            FOREIGN KEY (QUALITY_CONTROL_PLAN_ID) REFERENCES QUALITY_CONTROL_PLAN(ID),
+            FOREIGN KEY (INSPECTOR_ID) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    # QUALITY_INSPECTION_ITEM
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS QUALITY_INSPECTION_ITEM (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            QUALITY_INSPECTION_ID INTEGER NOT NULL,
+            ITEM_NUMBER TEXT,
+            PARAMETER_NAME TEXT,
+            SPECIFICATION_MIN REAL,
+            SPECIFICATION_MAX REAL,
+            MEASURED_VALUE REAL,
+            PASS_FAIL INTEGER DEFAULT 0,
+            REMARKS TEXT,
+            IS_DELETED INTEGER DEFAULT 0,
+            FOREIGN KEY (QUALITY_INSPECTION_ID) REFERENCES QUALITY_INSPECTION(ID)
+        )
+    ''')
+    
+    # NONCONFORMANCE
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS NONCONFORMANCE (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            NCR_NUMBER TEXT UNIQUE,
+            BATCH_RUN_ID INTEGER,
+            BATCH_RUN_STEP_ID INTEGER,
+            QUALITY_INSPECTION_ID INTEGER,
+            DETECTED_BY INTEGER,
+            DETECTION_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            DEFECT_TYPE INTEGER,
+            DEFECT_DESCRIPTION TEXT,
+            QUANTITY_AFFECTED INTEGER,
+            SEVERITY INTEGER DEFAULT 2,
+            ROOT_CAUSE TEXT,
+            CORRECTIVE_ACTION TEXT,
+            PREVENTIVE_ACTION TEXT,
+            ASSIGNED_TO INTEGER,
+            TARGET_COMPLETION_DATE DATETIME,
+            ACTUAL_COMPLETION_DATE DATETIME,
+            STATUS INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            FOREIGN KEY (BATCH_RUN_ID) REFERENCES BATCH_RUN(ID),
+            FOREIGN KEY (BATCH_RUN_STEP_ID) REFERENCES BATCH_RUN_STEP(ID),
+            FOREIGN KEY (QUALITY_INSPECTION_ID) REFERENCES QUALITY_INSPECTION(ID),
+            FOREIGN KEY (DETECTED_BY) REFERENCES PERSONNEL(ID),
+            FOREIGN KEY (ASSIGNED_TO) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    conn.commit()
+    print("✅ Quality tables created successfully")
+
+def create_supplier_tables(conn):
+    """Create supplier and vendor management tables."""
+    cursor = conn.cursor()
+    
+    # SUPPLIER
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS SUPPLIER (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            NAME TEXT NOT NULL,
+            SUPPLIER_CODE TEXT UNIQUE,
+            CONTACT_NAME TEXT,
+            CONTACT_EMAIL TEXT,
+            CONTACT_PHONE TEXT,
+            ADDRESS TEXT,
+            CITY TEXT,
+            STATE TEXT,
+            POSTAL_CODE TEXT,
+            COUNTRY TEXT,
+            WEBSITE TEXT,
+            TAX_ID TEXT,
+            PAYMENT_TERMS TEXT,
+            LEAD_TIME_DAYS INTEGER,
+            QUALITY_RATING REAL DEFAULT 0.0,
+            DELIVERY_RATING REAL DEFAULT 0.0,
+            OVERALL_RATING REAL DEFAULT 0.0,
+            IS_APPROVED INTEGER DEFAULT 0,
+            IS_ACTIVE INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            LAST_AUDIT_DATE DATETIME,
+            NEXT_AUDIT_DATE DATETIME,
+            NOTES TEXT
+        )
+    ''')
+    
+    # PURCHASE_ORDER
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS PURCHASE_ORDER (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PO_NUMBER TEXT UNIQUE NOT NULL,
+            SUPPLIER_ID INTEGER NOT NULL,
+            ORDER_DATE DATETIME DEFAULT CURRENT_TIMESTAMP,
+            REQUESTED_DELIVERY_DATE DATETIME,
+            ACTUAL_DELIVERY_DATE DATETIME,
+            TOTAL_AMOUNT REAL DEFAULT 0.0,
+            CURRENCY TEXT DEFAULT 'USD',
+            STATUS INTEGER DEFAULT 1,
+            TERMS_CONDITIONS TEXT,
+            SHIPPING_ADDRESS TEXT,
+            BILLING_ADDRESS TEXT,
+            CREATED_BY INTEGER,
+            APPROVED_BY INTEGER,
+            APPROVED_DATE DATETIME,
+            IS_DELETED INTEGER DEFAULT 0,
+            NOTES TEXT,
+            FOREIGN KEY (SUPPLIER_ID) REFERENCES SUPPLIER(ID),
+            FOREIGN KEY (CREATED_BY) REFERENCES PERSONNEL(ID),
+            FOREIGN KEY (APPROVED_BY) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    # PURCHASE_ORDER_ITEM
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS PURCHASE_ORDER_ITEM (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PURCHASE_ORDER_ID INTEGER NOT NULL,
+            INVENTORY_ITEM_TYPE_ID INTEGER,
+            ITEM_DESCRIPTION TEXT,
+            QUANTITY REAL NOT NULL,
+            UNIT_PRICE REAL,
+            TOTAL_PRICE REAL,
+            RECEIVED_QUANTITY REAL DEFAULT 0,
+            REJECTED_QUANTITY REAL DEFAULT 0,
+            STATUS INTEGER DEFAULT 1,
+            DELIVERY_DATE DATETIME,
+            IS_DELETED INTEGER DEFAULT 0,
+            NOTES TEXT,
+            FOREIGN KEY (PURCHASE_ORDER_ID) REFERENCES PURCHASE_ORDER(ID),
+            FOREIGN KEY (INVENTORY_ITEM_TYPE_ID) REFERENCES INVENTORY_ITEM_TYPE(ID)
+        )
+    ''')
+    
+    conn.commit()
+    print("✅ Supplier tables created successfully")
+
+def create_maintenance_tables(conn):
+    """Create maintenance and reliability tables."""
+    cursor = conn.cursor()
+    
+    # MAINTENANCE_SCHEDULE
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS MAINTENANCE_SCHEDULE (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            FACILITY_ASSET_ID INTEGER NOT NULL,
+            MAINTENANCE_TYPE INTEGER DEFAULT 1,
+            FREQUENCY_TYPE INTEGER DEFAULT 1,
+            FREQUENCY_VALUE INTEGER,
+            LAST_MAINTENANCE_DATE DATETIME,
+            NEXT_MAINTENANCE_DATE DATETIME,
+            ESTIMATED_DURATION_HOURS REAL,
+            ASSIGNED_TECHNICIAN_ID INTEGER,
+            MAINTENANCE_INSTRUCTIONS TEXT,
+            REQUIRED_PARTS TEXT,
+            REQUIRED_TOOLS TEXT,
+            SAFETY_REQUIREMENTS TEXT,
+            IS_ACTIVE INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            CREATED_BY INTEGER,
+            FOREIGN KEY (FACILITY_ASSET_ID) REFERENCES FACILITY_ASSET(ID),
+            FOREIGN KEY (ASSIGNED_TECHNICIAN_ID) REFERENCES PERSONNEL(ID),
+            FOREIGN KEY (CREATED_BY) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    # MAINTENANCE_WORK_ORDER
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS MAINTENANCE_WORK_ORDER (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            WORK_ORDER_NUMBER TEXT UNIQUE,
+            FACILITY_ASSET_ID INTEGER NOT NULL,
+            MAINTENANCE_SCHEDULE_ID INTEGER,
+            PRIORITY INTEGER DEFAULT 3,
+            WORK_ORDER_TYPE INTEGER DEFAULT 1,
+            REQUESTED_BY INTEGER,
+            ASSIGNED_TO INTEGER,
+            DESCRIPTION TEXT,
+            ESTIMATED_HOURS REAL,
+            ACTUAL_HOURS REAL,
+            PARTS_COST REAL DEFAULT 0.0,
+            LABOR_COST REAL DEFAULT 0.0,
+            TOTAL_COST REAL DEFAULT 0.0,
+            SCHEDULED_START_DATE DATETIME,
+            ACTUAL_START_DATE DATETIME,
+            SCHEDULED_END_DATE DATETIME,
+            ACTUAL_END_DATE DATETIME,
+            STATUS INTEGER DEFAULT 1,
+            COMPLETION_NOTES TEXT,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (FACILITY_ASSET_ID) REFERENCES FACILITY_ASSET(ID),
+            FOREIGN KEY (MAINTENANCE_SCHEDULE_ID) REFERENCES MAINTENANCE_SCHEDULE(ID),
+            FOREIGN KEY (REQUESTED_BY) REFERENCES PERSONNEL(ID),
+            FOREIGN KEY (ASSIGNED_TO) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    # EQUIPMENT_DOWNTIME
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS EQUIPMENT_DOWNTIME (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            FACILITY_ASSET_ID INTEGER NOT NULL,
+            DOWNTIME_START DATETIME NOT NULL,
+            DOWNTIME_END DATETIME,
+            DURATION_MINUTES INTEGER,
+            DOWNTIME_TYPE INTEGER DEFAULT 1,
+            REASON_CODE TEXT,
+            DESCRIPTION TEXT,
+            REPORTED_BY INTEGER,
+            RESOLVED_BY INTEGER,
+            RESOLUTION_NOTES TEXT,
+            IMPACT_ASSESSMENT TEXT,
+            PREVENTION_MEASURES TEXT,
+            IS_DELETED INTEGER DEFAULT 0,
+            FOREIGN KEY (FACILITY_ASSET_ID) REFERENCES FACILITY_ASSET(ID),
+            FOREIGN KEY (REPORTED_BY) REFERENCES PERSONNEL(ID),
+            FOREIGN KEY (RESOLVED_BY) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    conn.commit()
+    print("✅ Maintenance tables created successfully")
+
+def create_production_planning_tables(conn):
+    """Create production planning and scheduling tables."""
+    cursor = conn.cursor()
+    
+    # PRODUCTION_SCHEDULE
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS PRODUCTION_SCHEDULE (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            SCHEDULE_NAME TEXT NOT NULL,
+            SCHEDULE_DATE DATETIME NOT NULL,
+            SHIFT_ID INTEGER,
+            DEPARTMENT_ID INTEGER,
+            SUPERVISOR_ID INTEGER,
+            TOTAL_PLANNED_HOURS REAL,
+            TOTAL_ACTUAL_HOURS REAL,
+            EFFICIENCY_PERCENTAGE REAL,
+            STATUS INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            CREATED_BY INTEGER,
+            NOTES TEXT,
+            FOREIGN KEY (SUPERVISOR_ID) REFERENCES PERSONNEL(ID),
+            FOREIGN KEY (CREATED_BY) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    # SHIFT_SCHEDULE
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS SHIFT_SCHEDULE (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            SHIFT_NAME TEXT NOT NULL,
+            START_TIME TIME NOT NULL,
+            END_TIME TIME NOT NULL,
+            BREAK_START_TIME TIME,
+            BREAK_END_TIME TIME,
+            MEAL_BREAK_START_TIME TIME,
+            MEAL_BREAK_END_TIME TIME,
+            TOTAL_HOURS REAL,
+            IS_ACTIVE INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            NOTES TEXT
+        )
+    ''')
+    
+    # CAPACITY_PLANNING
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS CAPACITY_PLANNING (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            RESOURCE_TYPE INTEGER NOT NULL,
+            RESOURCE_ID INTEGER NOT NULL,
+            PLANNING_PERIOD_START DATETIME NOT NULL,
+            PLANNING_PERIOD_END DATETIME NOT NULL,
+            AVAILABLE_CAPACITY REAL,
+            PLANNED_CAPACITY REAL,
+            ACTUAL_CAPACITY REAL,
+            UTILIZATION_PERCENTAGE REAL,
+            BOTTLENECK_INDICATOR INTEGER DEFAULT 0,
+            CAPACITY_CONSTRAINTS TEXT,
+            IMPROVEMENT_SUGGESTIONS TEXT,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            CREATED_BY INTEGER,
+            FOREIGN KEY (CREATED_BY) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    conn.commit()
+    print("✅ Production planning tables created successfully")
+
+def create_cost_tracking_tables(conn):
+    """Create cost tracking and financial tables."""
+    cursor = conn.cursor()
+    
+    # COST_CENTER
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS COST_CENTER (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            NAME TEXT NOT NULL,
+            CODE TEXT UNIQUE,
+            DESCRIPTION TEXT,
+            PARENT_COST_CENTER_ID INTEGER,
+            MANAGER_ID INTEGER,
+            BUDGET_ANNUAL REAL,
+            BUDGET_MONTHLY REAL,
+            ACTUAL_SPEND_YTD REAL DEFAULT 0.0,
+            ACTUAL_SPEND_MTD REAL DEFAULT 0.0,
+            IS_ACTIVE INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (PARENT_COST_CENTER_ID) REFERENCES COST_CENTER(ID),
+            FOREIGN KEY (MANAGER_ID) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    # COST_TRANSACTION
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS COST_TRANSACTION (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            COST_CENTER_ID INTEGER NOT NULL,
+            TRANSACTION_DATE DATETIME DEFAULT CURRENT_TIMESTAMP,
+            TRANSACTION_TYPE INTEGER NOT NULL,
+            AMOUNT REAL NOT NULL,
+            CURRENCY TEXT DEFAULT 'USD',
+            REFERENCE_TYPE TEXT,
+            REFERENCE_ID INTEGER,
+            DESCRIPTION TEXT,
+            ACCOUNT_CODE TEXT,
+            APPROVED_BY INTEGER,
+            APPROVAL_DATE DATETIME,
+            IS_DELETED INTEGER DEFAULT 0,
+            FOREIGN KEY (COST_CENTER_ID) REFERENCES COST_CENTER(ID),
+            FOREIGN KEY (APPROVED_BY) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    # LABOR_COST_RATE
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS LABOR_COST_RATE (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            PERSONNEL_ID INTEGER NOT NULL,
+            EFFECTIVE_DATE DATETIME NOT NULL,
+            HOURLY_RATE REAL NOT NULL,
+            OVERTIME_RATE REAL,
+            SHIFT_DIFFERENTIAL REAL DEFAULT 0.0,
+            SKILL_PREMIUM REAL DEFAULT 0.0,
+            TOTAL_HOURLY_COST REAL,
+            CURRENCY TEXT DEFAULT 'USD',
+            IS_ACTIVE INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            CREATED_BY INTEGER,
+            FOREIGN KEY (PERSONNEL_ID) REFERENCES PERSONNEL(ID),
+            FOREIGN KEY (CREATED_BY) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    # MACHINE_COST_RATE
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS MACHINE_COST_RATE (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            FACILITY_ASSET_ID INTEGER NOT NULL,
+            EFFECTIVE_DATE DATETIME NOT NULL,
+            HOURLY_RATE REAL NOT NULL,
+            SETUP_COST REAL DEFAULT 0.0,
+            MAINTENANCE_COST_PER_HOUR REAL DEFAULT 0.0,
+            ENERGY_COST_PER_HOUR REAL DEFAULT 0.0,
+            DEPRECIATION_COST_PER_HOUR REAL DEFAULT 0.0,
+            TOTAL_HOURLY_COST REAL,
+            CURRENCY TEXT DEFAULT 'USD',
+            IS_ACTIVE INTEGER DEFAULT 1,
+            IS_DELETED INTEGER DEFAULT 0,
+            CREATED_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP,
+            CREATED_BY INTEGER,
+            FOREIGN KEY (FACILITY_ASSET_ID) REFERENCES FACILITY_ASSET(ID),
+            FOREIGN KEY (CREATED_BY) REFERENCES PERSONNEL(ID)
+        )
+    ''')
+    
+    conn.commit()
+    print("✅ Cost tracking tables created successfully")
+
+def main():
+    """Main function to add more tables to the existing database."""
+    print("🚀 Adding more tables to ArcOps 500-Table Database...")
+    
+    try:
+        # Create database connection
+        conn = create_database_connection()
+        
+        # Create additional table groups
+        create_inventory_tables(conn)
+        create_location_tables(conn)
+        create_quality_tables(conn)
+        create_supplier_tables(conn)
+        create_maintenance_tables(conn)
+        create_production_planning_tables(conn)
+        create_cost_tracking_tables(conn)
+        
+        print(f"\n✅ Additional tables added successfully to: {DB_PATH}")
+        print(f"📊 Progress: ~100 tables created (Part 2 of 500-table database)")
+        
+        # Show updated table counts
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = cursor.fetchall()
+        print(f"\n🔍 Current Database Statistics:")
+        print(f"   Total Tables: {len(tables)}")
+        
+        conn.close()
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
